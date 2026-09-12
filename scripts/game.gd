@@ -39,12 +39,17 @@ var last_screen := ''
 var result_age := 0.0
 var hud_refresh := 0.0
 var confetti: GPUParticles3D
+@export var skin_save_path := 'user://appearance.cfg'
+var skin_store: RefCounted
+var wardrobe: Control
 
 func _ready() -> void:
 	var args := OS.get_cmdline_user_args()
 	practice = practice and not '--race' in args
 	get_window().title = '宜之有之派对'
 	in_island = practice and not ('--practice' in args or '--autoplay' in args or '--profile' in args)
+	skin_store = preload('res://scripts/skin_store.gd').new(skin_save_path)
+	skin_store.load_skin()
 	configure_inputs()
 	configure_render_scale()
 	build_lighting()
@@ -58,6 +63,7 @@ func _ready() -> void:
 		add_child(racer)
 		racers.append(racer)
 	player = racers[0]
+	player.set_skin(skin_store.selected_id)
 	reset_racers()
 	player.pivot.rotation.y = .22
 	camera = Camera3D.new()
@@ -74,6 +80,9 @@ func _ready() -> void:
 	hud = HUD.new()
 	hud.game = self
 	canvas.add_child(hud)
+	wardrobe = preload('res://scripts/wardrobe.gd').new()
+	wardrobe.game = self
+	canvas.add_child(wardrobe)
 	for cue in ['jump','roll','checkpoint','finish','tick','go','fall']:
 		var channel := AudioStreamPlayer.new()
 		channel.stream = load('res://assets/audio/'+cue+'.wav')
@@ -173,6 +182,7 @@ func reset_racers() -> void:
 		racers[i].reset_to_start(p)
 
 func start_race() -> void:
+	if wardrobe: wardrobe.close()
 	release_mouse_drive()
 	music.play_theme('race')
 	if in_island:
@@ -201,6 +211,7 @@ func replace_world(next_world: Node3D) -> void:
 	add_child(course)
 
 func enter_island() -> void:
+	if wardrobe: wardrobe.close()
 	release_mouse_drive()
 	music.play_theme('island')
 	paused = false
@@ -324,6 +335,11 @@ func update_camera(delta: float) -> void:
 	camera.fov = lerpf(camera.fov,target_fov,1-exp(-delta*4))
 
 func _input(event: InputEvent) -> void:
+	if wardrobe and wardrobe.visible:
+		if event is InputEventKey and event.pressed and not event.echo and event.physical_keycode == KEY_ESCAPE:
+			wardrobe.close()
+			get_viewport().set_input_as_handled()
+		return
 	if event is InputEventMouseButton and event.button_index in [MOUSE_BUTTON_LEFT,MOUSE_BUTTON_RIGHT]:
 		var both: bool = (event.button_mask & (MOUSE_BUTTON_MASK_LEFT | MOUSE_BUTTON_MASK_RIGHT)) == (MOUSE_BUTTON_MASK_LEFT | MOUSE_BUTTON_MASK_RIGHT)
 		mouse_forward = both and screen in ['island','racing'] and not paused and player.active and not player.finished
@@ -337,6 +353,7 @@ func _input(event: InputEvent) -> void:
 				elif screen in ['racing','island']: toggle_pause()
 			KEY_R:
 				if screen in ['racing','island'] and not paused: player.respawn()
+			KEY_B: wardrobe.open()
 			KEY_F3: show_metrics = not show_metrics
 			KEY_F12: screenshot('manual-%d' % Time.get_ticks_msec())
 	if event is InputEventMouseMotion and (mouse_forward or Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT)) and screen in ['racing','island'] and not paused:
@@ -357,8 +374,10 @@ func _notification(what: int) -> void:
 	if what == NOTIFICATION_APPLICATION_FOCUS_OUT: release_mouse_drive()
 
 func ui_action(action: String) -> void:
+	if wardrobe and wardrobe.visible: return
 	match action:
 		'join','start','retry','restart': start_race()
+		'wardrobe': wardrobe.open()
 		'island': enter_island()
 		'resume': paused = false
 

@@ -1,6 +1,18 @@
 # 宜之有之派对
 
-Godot 4.7.2 + GDScript 的原创 Q 版 3D 单机派对游戏。默认从蛋仔岛开始，点击“参赛”进入云端冲冲赛第一关。
+Godot 4.7.2 + GDScript 的 Q 版 3D 单机派对游戏。默认从蛋仔岛开始，点击“参赛”进入云端冲冲赛第一关。角色按经典蛋仔外形自行建模，场景、配饰与配乐在本项目中制作。
+
+## 蛋仔与皮肤
+
+默认角色为圆润的黄色蛋仔：浅肤色面部、黑色小眼睛、球形触角、短手与白鞋，保留走路摇摆、跳跃伸缩和滚动动画。
+
+在岛上点击右侧“衣柜”或按 **B**，可试穿经典小黄、蜜桃软糖、薄荷汽水、晴空蓝蓝、草莓贝雷和金冠派对六套皮肤。拖动预览或点击左右转按钮查看模型；点击“穿上这套”保存，取消或 Esc 返回。Tab / 方向键切换按钮焦点，空格 / Enter 操作当前按钮。
+
+皮肤保存在 Godot 用户数据目录中的 `appearance.cfg`，重新启动、参赛和返回岛屿都会保留。换装期间暂停世界，试穿不会更改实际穿着；飞行、腾空或施放技能期间暂不能打开衣柜。皮肤不改变碰撞体、移动速度和技能参数。
+
+## 开发分支
+
+后续开发在 `dev` 分支进行，每个功能完成相应自动测试及实际画面检查后合并到 `main`，同步 GitHub，然后切回 `dev` 继续开发。`main` 保留已通过验证的版本。
 
 ## 蛋仔岛与单人比赛
 
@@ -46,12 +58,13 @@ macOS 也可以在项目目录运行 `./play.command`：启动脚本优先使用
 | R | 回到最近检查点 |
 | Esc | 暂停 / 继续；结算页返回首页 |
 | Enter | 岛上参赛 / 再跑一局 |
+| B | 岛上打开衣柜 |
 | F3 | 显示性能面板 |
 | F12 | 保存当前画面 |
 
 ## 内容
 
-- 原创蛋形选手：奶油色外壳、头盔耳机、围巾、脚步动画、跳跃伸缩、滚动动画。
+- 经典蛋仔外形的自建选手模型：球形身体、触角、短手白鞋、可换皮肤、脚步动画、跳跃伸缩、滚动动画。
 - 云上玩具赛道：约 318 单位赛程（原版的两倍），13 处断口、无护栏窄桥、错位跳台、旋转杆、移动门与 6 处途中检查点。
 - 电脑选手使用实际角色物理、跳跃与障碍判断；已晋级选手退出碰撞，避免堵住终点。
 - Metal Forward+、MSAA、环境遮蔽、动态阴影、柔和色调映射。
@@ -60,6 +73,10 @@ macOS 也可以在项目目录运行 `./play.command`：启动脚本优先使用
 ## 文件
 
 - `art/cloud_racer.blend`：可编辑角色源文件。
+- `art/build_character.py`：角色建模、语义材质、动画节点和 GLB 导出程序。
+- `scripts/skin_catalog.gd`：皮肤颜色与可替换配饰目录。
+- `scripts/skin_store.gd`：皮肤选择保存与无效存档回退。
+- `scripts/wardrobe.gd`：独立 3D 试穿预览、旋转及换装交互。
 - `art/island_monument.blend`：保留圆角修改器的可编辑雕塑源文件。
 - `art/export_letter_meshes.gd`、`art/build_island_letters.py`：导出中文字网格并生成圆角雕塑。
 - `scripts/island.gd`：蛋仔岛布局、Q 版建筑、植被与灯柱广告牌。
@@ -83,6 +100,8 @@ macOS 也可以在项目目录运行 `./play.command`：启动脚本优先使用
 .tools/Godot.app/Contents/MacOS/Godot --headless --path . --fixed-fps 60 --script tests/test_island.gd
 .tools/Godot.app/Contents/MacOS/Godot --headless --path . --script tests/test_rules.gd
 .tools/Godot.app/Contents/MacOS/Godot --headless --path . --script tests/test_world.gd
+.tools/Godot.app/Contents/MacOS/Godot --headless --path . --script tests/test_skins.gd
+.tools/Godot.app/Contents/MacOS/Godot --headless --path . --script tests/test_wardrobe.gd
 .tools/Godot.app/Contents/MacOS/Godot --headless --path . --fixed-fps 60 --script tests/test_solo.gd
 .tools/Godot.app/Contents/MacOS/Godot --headless --path . --fixed-fps 60 --script tests/test_response.gd
 .tools/Godot.app/Contents/MacOS/Godot --headless --path . --fixed-fps 60 --script tests/test_race.gd

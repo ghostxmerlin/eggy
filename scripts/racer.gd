@@ -1,6 +1,8 @@
 extends CharacterBody3D
 
 const MODEL = preload('res://assets/models/racer.glb')
+const Skins = preload('res://scripts/skin_catalog.gd')
+var skin_id := 'classic'
 const SPEED := 8.0
 const JUMP_SPEED := 9.3
 const GRAVITY := 24.0
@@ -64,17 +66,8 @@ func _ready() -> void:
 	for part in ['ArmL','ArmR','FootL','FootR']:
 		var node := model.find_child(part,true,false)
 		if node: limbs[part] = [node,node.position]
-	if not is_player:
-		var colors := [Color('#dd8daf'),Color('#93a2e2'),Color('#eda252'),Color('#73b891'),Color('#6fafd5'),Color('#c1a6d7')]
-		var body := model.find_child('Body',true,false) as MeshInstance3D
-		if body:
-			for i in range(body.mesh.get_surface_count()):
-				var mat: StandardMaterial3D = body.get_active_material(i)
-				if mat and 'Lagoon' in mat.resource_name:
-					var copy := mat.duplicate()
-					copy.albedo_color = colors[racer_id%colors.size()]
-					body.set_surface_override_material(i,copy)
-	else:
+	set_skin('classic' if is_player else Skins.SKINS[racer_id%Skins.SKINS.size()].id)
+	if is_player:
 		var marker := MeshInstance3D.new()
 		var mesh := TorusMesh.new()
 		mesh.inner_radius = .69
@@ -102,6 +95,10 @@ func _ready() -> void:
 	skills = preload('res://scripts/skills.gd').new()
 	skills.name = 'Skills'
 	add_child(skills)
+
+func set_skin(id: String) -> void:
+	skin_id = Skins.get_skin(id).id
+	Skins.apply(model,skin_id)
 
 func request_jump() -> void:
 	if active and not finished and not game.paused and not is_instance_valid(vehicle) and not skills.controlled() and skills.dive_left <= 0: jump_buffer = .14
