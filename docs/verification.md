@@ -1,0 +1,58 @@
+# 单人操作调试 · 2026-09-12
+
+针对“帧率偏低、操作粘滞”调整了玩家控制器和跟随镜头，并减少 GPU 阴影与抗锯齿开销。
+
+## 控制器
+
+- 跑速仍为 8；地面加速度 40 → 96，空中 19 → 42，松键制动 140，反向制动 200。
+- 玩家模型转向响应系数 14 → 28；比赛镜头跟随系数 6.8 → 24。
+- `tests/test_response.gd` 使用真实引擎输入验证：100ms 内达到至少 7.5 跑速；100ms 内反向达到至少 6；松键后 83ms 内停稳；镜头快速靠近跟随位置。这里衡量游戏逻辑响应，不是键盘到屏幕的端到端延迟。
+- 原参数四项失败，修改后四项通过，日志为 `captures/response-red-output.log` 和 `captures/response-green-output.log`。
+- `tests/test_solo.gd` 覆盖移动、停步、跳跃、滚动、相机相对移动、暂停、掉落复位、重开及冲线。原有退出资源警告仍待单独处理。
+
+## 原生渲染短时对照
+
+Apple M4 Pro，Godot 4.7.2 Metal Forward+，1440×900；单独运行一个游戏窗口，自动控制同一路线，预热 2 秒、采样第 2～10 秒。数据只代表本机短时样本，不代表全关稳定帧率。
+
+| 设置 | 平均帧时间 | P95 | P99 |
+|---|---:|---:|---:|
+| 原设置：4× MSAA、四级阴影、阴影距离 110 | 15.20ms | 23.35ms | 24.11ms |
+| 新设置：2× MSAA、两级阴影、阴影距离 70 | 12.46ms | 16.89ms | 18.00ms |
+
+日志：`captures/solo-unbatched-warm.log`、`captures/solo-balanced.log`。新设置保留角色几何、材质、环境遮蔽与完整渲染分辨率；代价是边缘抗锯齿采样减少、远处阴影距离缩短。平均帧时间约降低 18%，不能据此宣称全程无卡顿。
+
+低分辨率诊断（65%）显著改善帧时间，支持 GPU 负担是当前瓶颈之一；该分辨率没有作为默认设置。静态场景合批未测得明确收益，已撤回。
+
+复测入口：
+
+```
+.tools/Godot.app/Contents/MacOS/Godot --path . --script tests/perf_short.gd
+.tools/Godot.app/Contents/MacOS/Godot --path . --script tests/perf_short.gd -- --original-quality
+```
+
+两次应顺序运行。最终手感需要人工试玩；32 人比赛性能及应用打包不属于本轮验收。
+
+## 蛋仔岛新增验收
+
+- 默认入口为蛋仔岛，`--practice` 仍可直接进入单人赛道。
+- `tests/test_island.gd` 验证自由移动、无比赛计时、掉落复位、参赛、冲线回岛、再次参赛与暂停回岛。最终通过，见 `captures/island-final.log`。
+- 既有单人操作和响应回归仍通过：`captures/island-solo.log`、`captures/island-response.log`。这些测试仍有既有退出资源警告；无界面运行也可能出现 macOS 证书访问提示。
+- 原生画面检查修正了共面地板闪烁、雕塑埋入底座、文字加工缺笔画及树冠遮挡角色的相机问题。最终截图：`captures/island-front.png`、`captures/island-side.png`、`captures/island-to-race.png`。
+- 雕塑由完整字形网格导出，再在 Blender 中添加圆角；可编辑源文件 `art/island_monument.blend`，生成入口 `art/export_letter_meshes.gd` → `art/build_island_letters.py`。
+- 岛屿性能脚本 `tests/island_preview.gd`：预热 150 帧，然后在出生点静止采样 8 秒；不包含截图保存，不能代表整岛跑动的所有视角。
+- 最终出生点静止样本：平均 11.11ms（约 90 FPS）、P95 16.65ms、P99 18.19ms，见 `captures/island-performance-final.log`。
+- 新版原生窗口已打开并检查；自动流程测试调用与按钮相同的动作入口，鼠标命中测试不计入自动覆盖。
+
+## 岛屿扩建与首关加长
+
+- 岛屿半径从约 26 扩至 48，面积约为原来的 3.4 倍。新增旋转摩天轮（保持座舱水平）、环岛飞行的小飞机、动态喷泉、载人升降台和约 30 单位高的巨型蛋仔。游戏名改成灯柱广告牌。
+- 改为 W/S 前后、Q/E 平移、A/D 转向，方向键对应前后与转向。身体摇摆和脚步动作是视觉动画，不放缓移动响应。
+- 赛程从 159 延至 318 单位；断口 3 → 13，增加错位跳台和无护栏窄桥；途中检查点增至 6 个，进度标记按检查点实际距离计算。
+- 新控制、长赛道路面、升降台与摩天轮载人测试通过；单人流程、岛屿往返、响应、规则和场景回归通过。日志：`captures/test_*-expansion-final.log`、`captures/rides-final.log`。
+- 正常控制接口的单人自动跑关在 41.22 秒抵达新终点（`captures/long-route.log`）；32 人回归有 24 人完成，玩家第 1，整局 78.77 秒（`captures/expanded-race.log`）。这些是自动控制数据，不代替人工手感验收。
+- 实际渲染图：`expanded-island-spawn.png`、`expanded-island-overview.png`、`expanded-ferris-wheel.png`、`expanded-lift.png`、`expanded-course-gaps.png`，均在 `captures/`。
+- 世界光照改用 ACES，调整曝光、环境光、主光、对比度和饱和度，保留动态阴影与环境遮蔽。岛屿镜头扩大视野并抬高视线，以容纳高设施。
+- 试验性静态合批减少了绘制次数，但非均匀缩放表面的光照出现失真，且未证明平均帧时间提升，因此撤回。最终使用共享基础网格与岛屿 90% 内部渲染比例、FSR 画面重建，保持界面原分辨率；赛道使用 100% 渲染比例。
+- 最终配置的出生点短时采样：平均 13.52ms（约 74 FPS），P95 23.29ms，P99 54.70ms，约 230 次绘制。仍存在偶发帧时间波动，不宣称整岛各视角稳定同一帧率。完整日志：`captures/expanded-performance-final.log`。
+- 最终渲染复核已恢复扁平景物与圆形小屋的正确光照；`captures/expanded-visual-checked.log` 无原生渲染错误。
+- 最后一次场景、单人、岛屿、按键、响应、新赛道和设施载人回归均通过，见 `captures/test_*-expansion-final.log`。

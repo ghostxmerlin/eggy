@@ -1,0 +1,13 @@
+.godot/
+.tools/
+captures/
+dist/
+__pycache__/
+*.pyc
+*.blend[0-9]*
+*.tmp
+.DS_Store
+.env
+.env.*
+!.env.example
+.godot/export_credentials.cfg

@@ -1,0 +1,27 @@
+extends SceneTree
+
+func _initialize() -> void:
+	var script = load('res://scripts/race_rules.gd')
+	assert(script != null, 'Race rules must exist')
+	var race = script.new()
+	race.start()
+	assert(race.phase == 'countdown')
+	race.advance(2.9)
+	assert(race.phase == 'countdown')
+	race.advance(0.2)
+	assert(race.phase == 'racing')
+	assert(race.finish(7) == 1)
+	assert(race.finish(7) == 1, 'Duplicate finish must not add a place')
+	assert(race.order.size() == 1)
+	for i in range(23):
+		race.finish(100 + i)
+	assert(race.phase == 'ended', 'Qualification capacity ends race')
+	assert(race.finish(999) == 0, 'Late racers cannot qualify')
+	race.start()
+	assert(race.order.is_empty())
+	race.advance(3.0)
+	race.advance(150.0)
+	assert(race.phase == 'ended', 'Time limit ends race')
+	assert(race.finish(0) == 0)
+	print('PASS: countdown, duplicate finish, 24-place cutoff, timeout, restart')
+	quit()
