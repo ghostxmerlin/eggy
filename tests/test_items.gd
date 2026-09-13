@@ -126,8 +126,15 @@ func run() -> void:
 	check(items.use_item(player,Vector3.RIGHT),'Ball launches')
 	await frames(30)
 	check(items.hits.get('ball',0) > 0 and target.position.x > 10,'Swept ball collision physically knocks a rival beyond the track edge')
-	await frames(180)
-	check(target.position.y > -2 and absf(target.position.x) < 9,'Knocked-out rival respawns safely')
+	# Observe the actual recovery, before a later rotating hazard can hit again.
+	var recovered := false
+	for frame in range(180):
+		await frames(1)
+		var checkpoint: Vector3 = game.course.CHECKPOINTS[target.checkpoint]
+		if target.position.distance_to(checkpoint) < 3 and target.position.y > -.2:
+			recovered = true
+			break
+	check(recovered,'Knocked-out rival respawns safely')
 
 	for kind in ['ink','bomb','smoke']:
 		reset()
@@ -204,6 +211,7 @@ func run() -> void:
 	player.position.x = 6
 	var ai_box: Dictionary = items.add_pickup(target.position+Vector3.UP*.9)
 	check(items.collect(target,ai_box),'AI uses the same physical pickup rules')
+	player.position = Vector3(0,.1,-80)
 	equip('bomb',target)
 	target.item_state.ai_wait = 0
 	items.ai_try_use(target)

@@ -77,7 +77,7 @@ func collect(racer, pickup: Dictionary) -> bool:
 	if not can_act(racer) or racer.skills.controlled() or racer.item_state.held != '' or racer.item_state.pickup_lock > 0 or pickup.remaining > 0: return false
 	if racer.global_position.distance_to(pickup.position-Vector3.UP*.4) > 1.5: return false
 	racer.item_state.held = next_item()
-	racer.item_state.ai_wait = rng.randf_range(1.2,2.8)
+	racer.item_state.ai_wait = rng.randf_range(.35,.95)
 	pickup.remaining = PICKUP_RESPAWN
 	pickup.node.hide()
 	collected[racer.racer_id] = collected.get(racer.racer_id,0)+1
@@ -315,27 +315,77 @@ func _physics_process(delta: float) -> void:
 
 func ai_try_use(racer) -> void:
 	var state = racer.item_state
-	if not can_act(racer) or state.held == '' or state.ai_wait > 0: return
-	state.ai_wait = rng.randf_range(.9,1.8)
-	var direction: Vector3 = game.course.ai_target(racer.position,racer.lane,racer.racer_id)-racer.position
-	direction.y = 0
-	direction = direction.normalized()
-	if state.held in ['ball','ink','bomb','rope','smoke']:
-		var nearest = null
-		var distance := 13.0
-		for other in game.racers:
-			if other == racer or other.finished or not other.active: continue
-			var offset: Vector3 = other.position-racer.position
-			if absf(offset.y) > 2.5: continue
-			offset.y = 0
-			if offset.length() < distance and offset.length() > 1:
-				distance = offset.length()
-				nearest = other
-		if nearest:
-			direction = nearest.position-racer.position
-			direction.y = 0
-			direction = direction.normalized()
+	if not can_act(racer) or state.held == '' or state.ai_wait > 0 or racer.skills.controlled() or racer.skills.knockback_left > 0: return
+	state.ai_wait = rng.randf_range(.25,.55)
+	var direction: Vector3 = racer.race_ai.forward()
+	var gap: float = racer.race_ai.gap_distance()
+	var finish_distance: float = racer.position.z-game.course.FINISH_Z
+	match state.held:
+		'ball','ink','bomb','rope','smoke':
+			direction = ai_attack_direction(racer,state.held,direction)
+			if direction.length_squared() < .01: return
+		'boost':
+			if state.boost > 0 or racer.roll_left > 0 or not racer.is_on_floor(): return
+			if not racer.race_ai.clear_runway(12,direction) or racer.race_ai.traffic_cost(racer.position+direction*5) > 3: return
+		'jetpack':
+			if state.jetpack > 0 or finish_distance < 36: return
+			if not (gap >= 2 and gap < 8) and racer.race_ai.stuck_time < .6: return
+		'clock':
+			if racer.roll_cooldown < 1.2 and not racer.skills.remaining.any(func(value): return value > 3): return
+		'mine','crate':
+			# Drop obstacles behind into a pursuer's route, not in our own way.
+			var pursuer = null
+			for other in game.racers:
+				if other == racer or not other.active or other.finished: continue
+				var offset: Vector3 = other.position-racer.position
+				if offset.z > 3 and offset.z < 10 and absf(offset.x) < 2.8 and absf(offset.y) < 1.5:
+					pursuer = other
+					break
+			if pursuer == null or not racer.is_on_floor(): return
+			direction = Vector3.BACK
+		'spring':
+			if not racer.is_on_floor() or gap < 4 or gap > 9 or absf(direction.x) > .2 or finish_distance < 26: return
+			if not game.course.supported_at(racer.position+direction*18,1.0): return
+		'portal':
+			if not racer.is_on_floor() or finish_distance < 22: return
+			if gap > 16 and racer.race_ai.stuck_time < .5: return
+			var destination: Vector3 = racer.position+direction*16
+			if not game.course.supported_at(destination,1.2) or floor_at(destination).is_empty() or not clear_landing(destination+Vector3.UP*.1): return
 	use_item(racer,direction)
+
+func ai_attack_direction(racer, kind: String, forward: Vector3) -> Vector3:
+	var best := Vector3.ZERO
+	var best_score := INF
+	var lobbed: bool = kind in ['ink','bomb','smoke']
+	for other in game.racers:
+		if other == racer or other.finished or not other.active: continue
+		var offset: Vector3 = other.position-racer.position
+		if absf(offset.y) > 2.0: continue
+		offset.y = 0
+		var distance := offset.length()
+		if distance < 1.8 or distance > 23: continue
+		var alignment := forward.dot(offset.normalized())
+		if kind == 'rope' and alignment < .65: continue
+		if alignment < -.2 and (lobbed or distance > 6): continue
+		# Lead moving opponents using the same projectile speed and arc as players.
+		var flight := .85 if lobbed else minf(.8,distance/22.0)
+		var predicted: Vector3 = other.position+Vector3(other.velocity.x,0,other.velocity.z)*flight
+		var aim: Vector3 = predicted-racer.position
+		aim.y = 0
+		var reach := aim.length()
+		if lobbed and (reach < 11 or reach > 18): continue
+		if not lobbed and reach > 20: continue
+		if reach < .1: continue
+		var direction := aim.normalized()
+		if kind == 'rope' and not racer.race_ai.clear_runway(reach,direction): continue
+		var ray := PhysicsRayQueryParameters3D.create(racer.global_position+Vector3.UP,other.global_position+Vector3.UP,5)
+		if not get_world_3d().direct_space_state.intersect_ray(ray).is_empty(): continue
+		var score := absf(reach-14.5) if lobbed else reach
+		score += (1.0-alignment)*3.0
+		if score < best_score:
+			best_score = score
+			best = direction
+	return best
 
 func tick_projectiles(delta: float) -> void:
 	for i in range(projectiles.size()-1,-1,-1):

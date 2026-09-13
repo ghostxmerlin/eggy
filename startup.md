@@ -8,6 +8,8 @@
 
 同日道具更新：巅峰赛有十二种随机道具，玩家和 AI 从问号箱拾取，一次携带一个，R 使用，原 R 复位改为 T；详见 `docs/items.md`。道具模型由 `item_visuals.gd` 程序生成。字体已包含新中文；本机 Python 3.9.6 使用 fonttools 4.59.2 重建字体，运行游戏仍不需要 Python。
 
+同日人机更新：修复后半程全部走中心线的问题，新增 `race_ai.gd`，按平台宽度、邻近选手和实体道具选择跑线，加入跳跃脱困与安全直道滚动。基础跑速为 6.4–8.0（玩家 8），道具改为按目标、地形和冷却判断；自动跑关复用同一套路线决策。回归入口及实测见 `docs/verification.md` 的“人机竞争与终点拥堵”。
+
 ## 1. 新会话先做什么
 
 请先完整阅读本文，再看 [README.md](README.md)、[验证记录](docs/verification.md) 和 [资产来源](docs/ASSETS.md)。`startup.md` 是普通仓库文档，不要假定每个 Codex 会话都会自动读取；新会话可直接告知：“先阅读根目录 startup.md，然后在 dev 继续开发。”
@@ -162,6 +164,7 @@ BLENDER_BIN="/Applications/Blender.app/Contents/MacOS/Blender"
 | `scripts/racer.gd` | CharacterBody3D 移动与动画；玩家、AI、练习目标共用 |
 | `scripts/race_rules.gd` | 排名、计时、晋级、重开规则 |
 | `scripts/course.gd` | 首关布局、检查点、机关与 AI 路径 |
+| `scripts/race_ai.gd` | 路宽约束、局部避让、卡住恢复与滚动时机；使用 course 的共享平台数据 |
 | `scripts/island.gd` | 岛屿、建筑、练习区与可移动方块 |
 | `scripts/attractions.gd` | 摩天轮、升降台、飞机实例、巨型蛋仔 |
 | `scripts/plane_ride.gd` | 载人飞机状态机、舱盖网格、登机坡道、曲线路径、乘客退出 |
@@ -215,8 +218,11 @@ mkdir -p captures
 | 角色/皮肤/衣柜 | `test_skins.gd`、`test_wardrobe.gd`、原生 `wardrobe_preview.gd` |
 | 道具 | `test_items.gd`（至少 5000 帧），检查实际弹道、击飞、传送、部署、增益、AI、R/T 与清理 |
 | 完整 AI 比赛 | `test_race.gd`，帧上限至少 12000；从岛屿参赛入口创建 32 人道具赛，并检查 AI 拾取和使用 |
+| 人机拥堵与决策 | `test_race_ai.gd`，至少 7500 帧；停住领跑者、实体箱、最后窄桥、错位跳台、攻击提前量与遮挡、道具使用条件 |
 
 完整单人路线测试也应给至少 12000 帧。`test_race.gd` 加 `-- --visual` 可在原生窗口生成倒计时、比赛中和结算截图。`test_plane.gd` 自行使用 4 倍时间和 240 Hz 物理加速逻辑测试，不能用其耗时评价渲染性能。
+
+`test_race.gd -- --seed=91` 可切换道具种子；自动玩家也可能被淘汰，测试检查实际晋级状态而不保证玩家总能晋级。`test_race_ai.gd -- --visual` 在原生窗口额外保存终点绕人与绕箱截图；专项布置场景冻结比赛计时，整局用时以 `test_race.gd` 为准。
 
 原生视觉入口（不要带 `--headless`）：
 

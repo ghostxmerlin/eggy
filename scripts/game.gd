@@ -283,13 +283,7 @@ func _physics_process(delta: float) -> void:
 		screen = 'result'
 		finish_time = rules.elapsed
 	if autoplay and rules.phase == 'racing' and not player.finished:
-		var target: Vector3 = course.ai_target(player.position,0,0)
-		var difference := target-player.position
-		player.drive = Vector2(difference.x,difference.z).normalized()
-		for edge in course.GAP_EDGES:
-			if player.position.z < edge+1.8 and player.position.z > edge-.2 and player.is_on_floor(): player.request_jump()
-		if course.hazard_at(player.position+Vector3(0,0,-1.4)).length()>0 and player.is_on_floor(): player.request_jump()
-		if player.position.z > -17 or player.position.z < course.FINISH_Z+14: player.request_roll()
+		player.race_ai.tick(delta)
 
 func _process(delta: float) -> void:
 	frame_count += 1

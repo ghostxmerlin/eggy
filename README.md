@@ -26,6 +26,8 @@ Godot 4.7.2 + GDScript 的 Q 版 3D 单机派对游戏。默认从蛋仔岛开�
 
 巅峰赛加入十二种随机道具：传送球、墨汁炸弹、弹球、弹板、炸弹、地雷、云雾弹、加速、垫脚箱、弹簧绳、喷气背包、冷却秒表。碰触赛道问号箱拾取，**按 R 使用**，右键转动镜头调整投掷方向；一次携带一个，人机也会拾取和使用。详见 [道具规则与效果](docs/items.md)。
 
+人机会随路宽分散跑线，预判前方选手、绕开箱子和地雷，受阻后尝试换线与跳跃脱困；窄桥收紧路线，终点宽平台重新分流。不同选手有不同跑速与反应间隔，安全直道会滚动追赶，道具根据目标、射程、地形和冷却选择时机。
+
 岛屿出生点左前方有「技能练习区」，三只练习蛋仔可被击退、冻结或恐惧，受控结束后会返回原位；第三只会间歇跳跃，旁边两个方块与角色质量相同，可用飞扑撞开。练习目标只出现在岛上，不参与单人比赛。技能也能作用于原有 32 人比赛的其他选手。
 
 喷泉使用连续的宽扁水带、动态高光和落水涟漪。蛋仔岛播放轻快木琴与拨弦配乐，比赛切换到更快的合成旋律与鼓点；两首原创无歌词音乐分别循环播放，场景切换用 1.2 秒淡入淡出，暂停时音乐继续。
@@ -93,6 +95,7 @@ macOS 也可以在项目目录运行 `./play.command`：启动脚本优先使用
 - `scripts/fountain.gd`：连续水带网格、水面与飞溅动画。
 - `scripts/course.gd`：赛道、机关与地图装饰。
 - `scripts/racer.gd`：共享角色运动与动画。
+- `scripts/race_ai.gd`：局部路线选择、避让、卡住恢复与安全滚动。
 - `scripts/skills.gd`：五个技能、冷却、范围命中、冻结、恐惧与技能特效。暂停时冷却和控制时长停止，重生清除受控状态，场景切换清理练习目标。
 - `scripts/game.gd`：比赛、相机、音效与性能记录。
 - `scripts/hud.gd`：中文界面。
@@ -111,6 +114,7 @@ macOS 也可以在项目目录运行 `./play.command`：启动脚本优先使用
 .tools/Godot.app/Contents/MacOS/Godot --headless --path . --fixed-fps 60 --script tests/test_solo.gd
 .tools/Godot.app/Contents/MacOS/Godot --headless --path . --fixed-fps 60 --script tests/test_response.gd
 .tools/Godot.app/Contents/MacOS/Godot --headless --path . --fixed-fps 60 --script tests/test_race.gd
+.tools/Godot.app/Contents/MacOS/Godot --headless --path . --fixed-fps 60 --quit-after 7500 --script tests/test_race_ai.gd
 ./play.command -- --autoplay --profile
 ```
 

@@ -22,6 +22,7 @@ var hit_cooldown := 0.0
 var invulnerable := 0.0
 var lane := 0.0
 var ai_speed := 5.0
+var race_ai = preload('res://scripts/race_ai.gd').new()
 var model: Node3D
 var pivot: Node3D
 var roll_visual: Node3D
@@ -47,7 +48,8 @@ func _ready() -> void:
 	add_to_group('combatants')
 	rng.seed = racer_id*17+987
 	lane = float(racer_id%7-3)*2.25
-	ai_speed = rng.randf_range(4.7,6.8)
+	ai_speed = rng.randf_range(6.4,8.0)
+	race_ai.setup(self)
 	collision_layer = 2
 	collision_mask = 7
 	floor_snap_length = .35
@@ -133,6 +135,7 @@ func reset_to_start(pos: Vector3) -> void:
 	clear_item()
 	if skills: skills.reset(true)
 	position = pos
+	race_ai.reset()
 	velocity = Vector3.ZERO
 	checkpoint = 0
 	finished = false
@@ -158,6 +161,7 @@ func respawn() -> void:
 	clear_item()
 	skills.reset()
 	position = training_home if training_dummy else (game.Island.SPAWN if game.in_island else game.course.CHECKPOINTS[checkpoint] + Vector3(lane*.25 if not is_player else 0, .3, 0))
+	race_ai.reset()
 	velocity = Vector3.ZERO
 	roll_left = 0
 	jump_buffer = 0
@@ -229,12 +233,7 @@ func _physics_process(delta: float) -> void:
 					request_jump()
 					training_jump_clock = 3.0
 		elif not is_player and not external_control:
-			var target: Vector3 = game.course.ai_target(position,lane,racer_id)
-			var delta_pos := (target-position)
-			drive = Vector2(delta_pos.x,delta_pos.z).normalized()
-			for edge in game.course.GAP_EDGES:
-				if position.z < edge+1.65 and position.z > edge-.2 and is_on_floor(): request_jump()
-			if game.course.hazard_at(position+Vector3(0,0,-1.3)).length()>0 and is_on_floor(): request_jump()
+			race_ai.tick(delta)
 	else:
 		drive = Vector2.ZERO
 	var direction := Vector3(drive.x,0,drive.y)

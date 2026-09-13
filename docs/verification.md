@@ -98,3 +98,22 @@ Apple M4 Pro，Godot 4.7.2 Metal Forward+，1440×900；单独运行一个游戏
 .tools/Godot.app/Contents/MacOS/Godot --path . --quit-after 5000 --script tests/items_preview.gd
 .tools/Godot.app/Contents/MacOS/Godot --path . --quit-after 12000 --script tests/test_race.gd -- --visual
 ```
+
+## 2026-09-13：人机竞争与终点拥堵
+
+- 根因：原 `ai_target()` 在 Z < -145 后统一取中心线，终点平台变宽也没有恢复各自跑线；移动没有邻近选手、箱子和地雷的避让判断。现用与实体平台共享的 `TRACK_DECKS` 计算可用宽度，新增 `race_ai.gd` 做短距离路线评分、运动预测与路线保持。错位平台没有安全重叠区时先靠近本侧起跳位置，腾空后再横移；卡住后通过普通跳跃和换边尝试恢复，复位清理旧决策。
+- 基础跑速从 4.7–6.8 调至 6.4–8.0，玩家仍为 8。人机在安全直道通过原有技能接口滚动；碰撞、跳跃、滚动冷却、拾取和弹道规则沿用现有实现。道具按射程、提前量、遮挡、追兵、地形与技能冷却判断机会，具体条件见 [道具说明](items.md)。自动玩家也复用新路线逻辑，完整比赛测试不再要求其必定晋级。
+- `test_race_ai.gd` 无界面及原生验证均通过：8 人从单列状态绕过停住的领跑者，10 秒内全部冲线；6 人在相同偏好跑线上绕过真实实体箱，10 秒内全部冲线；7 人通过最后窄桥及断口且无掉落；14 人通过后半程所有错位跳台，45 秒内全部完成，共 4 次复位，没有反复卡在同一跳台。场景专项冻结比赛计时，使用物理帧数衡量期限。
+- 道具专项覆盖：无目标时保留攻击道具、合适射程的 AI 炸弹实际命中、对移动目标提前瞄准、实体墙遮挡、绳索避免向后拉、地雷放在追兵路线、秒表等待技能冷却、断口前保留加速、终点直道加速、终点前保留背包、受控禁用和复位清理脱困状态。
+- 三个种子的无界面完整道具赛（60 Hz 固定步进）均满 24 人晋级：2026 为 53.50 秒、自动玩家第 9；91 为 52.13 秒、第 4；7352 为 52.60 秒、第 15。分别有 27、27、27 名人机实际使用道具，均记录到攻击命中。日志为 `captures/ai-race-{2026,91,7352}.log`。
+- 最终原生整局（Godot 4.7.2、Apple M4、Metal Forward+、1440×900，种子 2026）通过：51.27 秒满 24 人晋级，自动玩家 48.62 秒获得第 22，29 名人机拾取、28 名人机使用道具；记录墨汁 9 次、弹球 15 次、绳索 3 次、炸弹 3 次、地雷 7 次命中，传送 4 次、弹板 48 次触发。日志 `captures/ai-race-native.log`，结算截图核对为 24 / 24。
+- 已逐张检查原生绕人、绕箱画面：`captures/ai-finish-queue-bypass.png`、`ai-finish-crate-bypass.png`。原生专项日志 `captures/ai-scenarios-native.log`；无界面专项 `captures/ai-scenarios.log`。
+- 原有 `test_items.gd`、`test_long_course.gd`、`test_solo.gd -- --practice`、`test_response.gd`、`test_island.gd` 通过，日志为 `captures/ai-regression-*.log`。道具复位测试改为观察实际返回检查点的事件，避免复位成功后再次被旋转杆击飞造成误报；AI 炸弹测试目标调整到该弹道的有效射程。
+- 最终原生两项运行无脚本或渲染报错。部分无界面测试仍有此前的证书读取及退出 ObjectDB/resource 提示。测试验证行为与实际画面，未测全程帧时间分布，也不保证不同运行模式和随机局的名次、用时一致。
+
+```sh
+.tools/Godot.app/Contents/MacOS/Godot --headless --path . --fixed-fps 60 --quit-after 7500 --script tests/test_race_ai.gd
+.tools/Godot.app/Contents/MacOS/Godot --path . --fixed-fps 60 --quit-after 7500 --script tests/test_race_ai.gd -- --visual
+.tools/Godot.app/Contents/MacOS/Godot --headless --path . --fixed-fps 60 --quit-after 12000 --script tests/test_race.gd -- --seed=91
+.tools/Godot.app/Contents/MacOS/Godot --path . --quit-after 12000 --script tests/test_race.gd -- --visual --seed=2026
+```

@@ -6,6 +6,28 @@ const START_Z := 11.0
 const FINISH_Z := -307.0
 const CHECKPOINTS := [Vector3(0, 0.1, 5), Vector3(0, 0.1, -49), Vector3(0, 0.1, -97), Vector3(0, 0.1, -139), Vector3(0, 0.1, -205), Vector3(0, 0.1, -263), Vector3(0, 0.1, -295)]
 const GAP_EDGES := [-61.0, -72.0, -83.0, -151.0, -169.0, -182.0, -195.0, -224.0, -235.0, -246.0, -257.0, -274.0, -286.0]
+# Shared by geometry and AI: start, end, width, color, center.
+const TRACK_DECKS := [
+	[14,-18,20,'mint',0],
+	[-18,-54,22,'mint',0],
+	[-54,-61,20,'purple',0],
+	[-63.6,-72,20,'orange',0],
+	[-74.6,-83,20,'purple',0],
+	[-85.6,-96,20,'orange',0],
+	[-96,-133,20,'mint',0],
+	[-133,-151,18,'yellow',0],
+	[-153.8,-169,6,'mint',0],
+	[-171.8,-182,6,'purple',-2.5],
+	[-184.8,-195,6,'orange',2.5],
+	[-197.8,-213,8,'mint',0],
+	[-213,-224,14,'yellow',0],
+	[-227,-235,5,'purple',-1.8],
+	[-238,-246,5,'orange',1.8],
+	[-249,-257,5,'purple',-1.8],
+	[-260,-274,12,'yellow',0],
+	[-276.8,-286,5,'mint',0],
+	[-288.8,-320,22,'yellow',0]
+]
 var palette: Dictionary = {}
 var rounded: Mesh
 var spinners: Array[Node3D] = []
@@ -130,25 +152,8 @@ func arrow(z: float, x := 0.0, color := 'cream') -> void:
 		b.rotation.y = side * -0.75
 
 func build_world() -> void:
-	deck(14,-18,20,'mint')
-	deck(-18,-54,22,'mint')
-	deck(-54,-61,20,'purple')
-	deck(-63.6,-72,20,'orange')
-	deck(-74.6,-83,20,'purple')
-	deck(-85.6,-96,20,'orange')
-	deck(-96,-133,20,'mint')
-	deck(-133,-151,18,'yellow')
-	deck(-153.8,-169,6,'mint')
-	deck(-171.8,-182,6,'purple',-2.5)
-	deck(-184.8,-195,6,'orange',2.5)
-	deck(-197.8,-213,8,'mint')
-	deck(-213,-224,14,'yellow')
-	deck(-227,-235,5,'purple',-1.8)
-	deck(-238,-246,5,'orange',1.8)
-	deck(-249,-257,5,'purple',-1.8)
-	deck(-260,-274,12,'yellow')
-	deck(-276.8,-286,5,'mint')
-	deck(-288.8,-320,22,'yellow')
+	for section in TRACK_DECKS:
+		deck(section[0],section[1],section[2],section[3],section[4])
 	rails(13,-17,20)
 	rails(-19,-53,22)
 	rails(-97,-132,20)
@@ -260,20 +265,42 @@ func hazard_at(pos: Vector3) -> Vector3:
 			return Vector3(radial.z,0,-radial.x).normalized()*11.0*spin_sign + Vector3.UP*5.5
 	return Vector3.ZERO
 
+# A gap uses the upcoming landing platform; margins include the racer radius.
+func ai_bounds(z: float) -> Vector2:
+	for section in TRACK_DECKS:
+		if z >= section[1]:
+			var half: float = section[2]*.5-.85
+			return Vector2(section[4]-half,section[4]+half)
+	return Vector2(-10.15,10.15)
+
+func supported_at(pos: Vector3, margin := .85) -> bool:
+	for section in TRACK_DECKS:
+		if pos.z <= section[0] and pos.z >= section[1]:
+			return absf(pos.x-section[4]) <= section[2]*.5-margin
+	return false
+
+func ai_route_bounds(pos: Vector3) -> Vector2:
+	var landing := ai_bounds(pos.z-4)
+	if pos.y > .4 or not supported_at(pos): return landing
+	var current := ai_bounds(pos.z)
+	var overlap := Vector2(maxf(current.x,landing.x),minf(current.y,landing.y))
+	if overlap.x <= overlap.y: return overlap
+	# Offset decks can have no overlap after body margins. Approach the takeoff
+	# edge on this deck, then steer across once airborne instead of walking off it.
+	var takeoff := current.y if landing.x > current.y else current.x
+	return Vector2(takeoff,takeoff)
+
 func ai_target(pos: Vector3, lane: float, id: int) -> Vector3:
-	var x := lane + sin(-pos.z*.075+id)*.5
+	var bounds := ai_route_bounds(pos)
+	var center := (bounds.x+bounds.y)*.5
+	var spread := minf(1.0,(bounds.y-bounds.x)/16.0)
+	var x := center + (lane + sin(-pos.z*.075+id)*.35)*spread
 	for gate in gates:
 		if absf(pos.z-gate.position.z)<10:
 			var gx: float = gate.get_node('Slider').position.x
 			x = -7.0 if gx>0 else 7.0
-	if pos.z < -145:
-		x = path_center(pos.z-5)
-	return Vector3(clampf(x,-8,8),0,pos.z-4)
+	return Vector3(clampf(x,bounds.x,bounds.y),0,pos.z-4)
 
 func path_center(z: float) -> float:
-	if z < -169 and z >= -182: return -2.5
-	if z < -182 and z >= -195: return 2.5
-	if z < -224 and z >= -235: return -1.8
-	if z < -235 and z >= -246: return 1.8
-	if z < -246 and z >= -257: return -1.8
-	return 0.0
+	var bounds := ai_bounds(z)
+	return (bounds.x+bounds.y)*.5
