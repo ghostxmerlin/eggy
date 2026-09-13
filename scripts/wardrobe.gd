@@ -11,6 +11,7 @@ var title_label: Label
 var note_label: Label
 var status_label: Label
 var wear_button: Button
+var category := 'legacy'
 var dragging := false
 var bold: Font
 var font: Font
@@ -27,12 +28,9 @@ func _ready() -> void:
 	var close_button := button('返回岛屿',Rect2(1150,113,144,48),close)
 	close_button.add_theme_font_size_override('font_size',19)
 	build_preview()
-	for i in range(Catalog.SKINS.size()):
-		var skin: Dictionary = Catalog.SKINS[i]
-		var rect := Rect2(716+(i%2)*287,221+floori(i/2.0)*119,269,100)
-		var card := button(skin.name,rect,func(): select_skin(skin.id))
-		card.add_theme_font_size_override('font_size',24)
-		cards[skin.id] = card
+	for i in range(3):
+		var group: String = ['legacy','basic','season'][i]
+		button(['基础外观','常驻套装','赛季套装'][i],Rect2(716+i*190,204,181,40),func(): show_category(group)).add_theme_font_size_override('font_size',18)
 	title_label = label('',Vector2(716,156),28,true)
 	note_label = label('',Vector2(719,608),19)
 	status_label = label('',Vector2(719,643),17)
@@ -41,6 +39,7 @@ func _ready() -> void:
 	wear_button = button('穿上这套',Rect2(716,704,270,58),confirm)
 	button('取消',Rect2(1000,704,269,58),close)
 	label('拖动蛋仔可以旋转查看',Vector2(289,662),17)
+	show_category('legacy')
 	resized.connect(rescale)
 	rescale()
 	hide()
@@ -152,6 +151,7 @@ func open() -> void:
 	game.paused = true
 	preview.rotation = Vector3.ZERO
 	dragging = false
+	show_category(Catalog.get_skin(game.skin_store.selected_id).get('group','legacy'))
 	select_skin(game.skin_store.selected_id)
 	viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
 	show()
@@ -164,11 +164,12 @@ func select_skin(id: String) -> void:
 	var skin := Catalog.get_skin(selected_id)
 	title_label.text = skin.name
 	note_label.text = skin.note
-	status_label.text = '当前正在穿着' if selected_id == game.skin_store.selected_id else '试穿中 · 穿上后自动保存'
+	wear_button.disabled = selected_id not in game.skin_store.owned
+	status_label.text = '未拥有 · 可预览，抽取后即可穿上' if wear_button.disabled else '当前正在穿着' if selected_id == game.skin_store.selected_id else '试穿中 · 穿上后自动保存'
 	for key in cards:
 		var entry := Catalog.get_skin(key)
 		cards[key].add_theme_stylebox_override('normal',style(Color(entry.shell).lightened(.65),Color('#167f86') if key == selected_id else Color.TRANSPARENT))
-	wear_button.text = '穿着出发' if selected_id == game.skin_store.selected_id else '穿上这套'
+	wear_button.text = '等待解锁' if wear_button.disabled else '穿着出发' if selected_id == game.skin_store.selected_id else '穿上这套'
 
 func confirm() -> void:
 	if not visible: return
@@ -194,3 +195,18 @@ func _draw() -> void:
 	draw_rect(Rect2(0,0,1440,900),Color(.10,.20,.27,.55))
 	draw_style_box(style(Color('#fffdf3')),Rect2(105,87,1230,711))
 	draw_style_box(style(Color('#e6f0e5')),Rect2(145,208,514,442))
+
+func show_category(group: String) -> void:
+	category = group
+	for card in cards.values():
+		card.hide()
+		card.queue_free()
+	cards.clear()
+	var entries: Array = Catalog.SKINS.filter(func(skin): return skin.get('group','legacy') == group)
+	for i in range(entries.size()):
+		var skin: Dictionary = entries[i]
+		var owned: bool = skin.id in game.skin_store.owned
+		var text: String = skin.name+'\n'+skin.get('rarity','基础')+(' · 已拥有' if owned else ' · 未拥有')
+		var card := button(text,Rect2(716+(i%2)*287,254+floori(i/2.0)*109,269,99),func(): select_skin(skin.id))
+		card.add_theme_font_size_override('font_size',20)
+		cards[skin.id] = card

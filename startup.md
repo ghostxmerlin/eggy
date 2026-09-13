@@ -10,6 +10,8 @@
 
 同日人机更新：修复后半程全部走中心线的问题，新增 `race_ai.gd`，按平台宽度、邻近选手和实体道具选择跑线，加入跳跃脱困与安全直道滚动。基础跑速为 6.4–8.0（玩家 8），道具改为按目标、地形和冷却判断；自动跑关复用同一套路线决策。回归入口及实测见 `docs/verification.md` 的“人机竞争与终点拥堵”。
 
+同日盲盒更新：用户指定早期“断罪骑士”银白机甲；新增常驻与机甲主题抽取、回车 `+500` 加蛋币、十连、50 抽高阶保底与前三次高阶不重复。原六款外观仍免费拥有，新套装须抽到后穿着。岛上 Enter 现打开蛋币输入，不再直接参赛；衣柜和结果弹窗 Enter 保留焦点操作。完整规则及来源见 [盲盒说明](docs/gacha.md)。GitHub 写权限 SSH deploy key 已由用户添加并验证，仓库配置了专用 core.sshCommand；新机器须重新鉴权，不复制或提交私钥。
+
 ## 1. 新会话先做什么
 
 请先完整阅读本文，再看 [README.md](README.md)、[验证记录](docs/verification.md) 和 [资产来源](docs/ASSETS.md)。`startup.md` 是普通仓库文档，不要假定每个 Codex 会话都会自动读取；新会话可直接告知：“先阅读根目录 startup.md，然后在 dev 继续开发。”
@@ -149,7 +151,8 @@ BLENDER_BIN="/Applications/Blender.app/Contents/MacOS/Blender"
 | B / 衣柜按钮 | 岛上换装，独立预览，确认才保存 |
 | R | 使用随机拾取的道具，右键转动镜头调整投掷方向 |
 | T | 岛上回广场；比赛回检查点；乘机中可退出回广场 |
-| Esc / Enter | 暂停/继续；参赛或重试，具体按当前界面；衣柜 Esc 取消，Enter 操作焦点按钮 |
+| Esc / Enter | 暂停/继续；岛上 Enter 输入 `+500` 加蛋币，结算 Enter 重试；衣柜 Esc 取消，Enter 操作焦点按钮 |
+| G / 盲盒按钮 | 岛上进入常驻盲盒与机甲主题抽取 |
 | F3 / F12 | 性能面板 / 截图 |
 
 岛出生点左前方有三个练习蛋仔，第三个间歇跳跃，旁边有两个等质量可移动方块。它们是岛屿中的训练目标，不能据 `game.racers.size() == 1` 推断场景没有其他可攻击对象。
@@ -172,8 +175,9 @@ BLENDER_BIN="/Applications/Blender.app/Contents/MacOS/Blender"
 | `scripts/fountain.gd` / `assets/shaders/` | 连续宽水带、水池和水流着色 |
 | `scripts/background_music.gd` | 两首 BGM、循环、快速切场景时的淡入淡出处理 |
 | `scripts/hud.gd` | 按 1440×900 设计坐标绘制的游戏界面及点击区 |
-| `scripts/skin_catalog.gd` | 六款 ID、颜色、可替换配饰、按实例应用材质 |
-| `scripts/skin_store.gd` | ConfigFile 加载与校验，临时文件写入后重命名保存 |
+| `scripts/skin_catalog.gd` / `outfit_models.gd` | 基础外观与套装 ID、品质、按实例应用材质及装甲几何 |
+| `scripts/skin_store.gd` | 皮肤、蛋币、收藏和保底的完整交易，临时文件写入后重命名保存 |
+| `scripts/gacha_rules.gd` / `gacha_room.gd` / `coin_console.gd` | 抽取规则、盲盒界面及正整数加币指令 |
 | `scripts/wardrobe.gd` | 原生按钮、独立 SubViewport 预览、试穿/确认/取消、焦点 |
 | `art/build_character.py` | 当前模型可重建源程序，默认只导出角色 |
 
@@ -216,6 +220,7 @@ mkdir -p captures
 | 飞机 | `test_plane_access.gd`、`test_plane.gd`（建议帧上限 5000） |
 | 音乐 | `test_music.gd`，另需实际听循环与场景切换 |
 | 角色/皮肤/衣柜 | `test_skins.gd`、`test_wardrobe.gd`、原生 `wardrobe_preview.gd` |
+| 盲盒、钱包与套装 | `test_gacha.gd`、`test_gacha_ui.gd`；后者加 `-- --visual` 原生验证点击、文本输入和截图 |
 | 道具 | `test_items.gd`（至少 5000 帧），检查实际弹道、击飞、传送、部署、增益、AI、R/T 与清理 |
 | 完整 AI 比赛 | `test_race.gd`，帧上限至少 12000；从岛屿参赛入口创建 32 人道具赛，并检查 AI 拾取和使用 |
 | 人机拥堵与决策 | `test_race_ai.gd`，至少 7500 帧；停住领跑者、实体箱、最后窄桥、错位跳台、攻击提前量与遮挡、道具使用条件 |

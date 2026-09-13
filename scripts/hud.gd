@@ -135,7 +135,7 @@ func _draw() -> void:
 			button('island',Rect2(738,541,204,62),'返回岛屿',false)
 			centered('Enter 重新出发    ·    Esc 返回岛屿',720,646,16,INK)
 	if game.screen in ['island','racing']: draw_skills()
-	if game.paused and not (game.wardrobe and game.wardrobe.visible):
+	if game.paused and not game.modal_open():
 		draw_rect(Rect2(0,0,1440,900),Color(.10,.20,.27,.40))
 		panel(Rect2(465,230,510,400),WHITE,32,true)
 		centered('歇一口气',720,304,42,INK,true)
@@ -163,7 +163,7 @@ func draw_island() -> void:
 	txt('宜之有之派对',Vector2(114,69),30,INK,true)
 	txt('蛋仔岛',Vector2(115,100),19,TEAL,true)
 	panel(Rect2(1208,34,198,44),Color(1,.99,.96,.92),22)
-	centered('今天也要开心玩',1307,63,19,TEAL,true)
+	centered('蛋币 %d' % game.skin_store.coins,1307,63,19,TEAL,true)
 	panel(Rect2(34,745,396,124),Color(1,.99,.96,.94),24,true)
 	if is_instance_valid(game.player.vehicle):
 		txt('环岛飞行中',Vector2(56,780),22,INK,true)
@@ -173,12 +173,13 @@ func draw_island() -> void:
 		txt('到处逛逛，试试技能',Vector2(56,780),22,INK,true)
 		txt('W/S 前后 · Q/E 平移 · A/D 转向',Vector2(56,814),16,TEAL)
 		txt('空格 跳跃 · 鼠标双键 前进',Vector2(56,845),16,TEAL)
+	if not is_instance_valid(game.player.vehicle): button('gacha',Rect2(1220,578,184,54),'盲盒 · G',false)
 	if not is_instance_valid(game.player.vehicle): button('wardrobe',Rect2(1220,646,184,54),'衣柜 · B',false)
 	panel(Rect2(1064,723,342,145),WHITE,28,true)
 	txt('云端冲冲赛',Vector2(1087,757),23,INK,true)
 	txt('第一关 · 32 位选手 · 前 24 名晋级',Vector2(1087,782),16,TEAL)
 	button('join',Rect2(1085,799,300,53),'参赛')
-	txt('Esc 休息一下  /  T 回到广场',Vector2(37,893),14,INK)
+	txt('Esc 休息 / T 回广场 / 回车 +500 加蛋币',Vector2(37,893),14,INK)
 
 func draw_item_slot() -> void:
 	var id: String = game.player.item_state.held

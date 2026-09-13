@@ -117,3 +117,12 @@ Apple M4 Pro，Godot 4.7.2 Metal Forward+，1440×900；单独运行一个游戏
 .tools/Godot.app/Contents/MacOS/Godot --headless --path . --fixed-fps 60 --quit-after 12000 --script tests/test_race.gd -- --seed=91
 .tools/Godot.app/Contents/MacOS/Godot --path . --quit-after 12000 --script tests/test_race.gd -- --visual --seed=2026
 ```
+
+## 2026-09-13：盲盒、蛋币与断罪骑士主题
+
+- 新增常驻三套、机甲主题六套外观，衣柜按基础／常驻／赛季分类，未拥有可试穿、不能装备；原六套与旧选择存档保留。机甲装甲为自建棱面网格，手脚沿用原动画节点，恢复普通外观会还原渲染层与配饰，不改碰撞、速度或技能。
+- `test_gacha.gd` 通过：所有 10000 个整数概率区间覆盖准确；10 万次不含保护的生产抽取路径采样，至臻 1568 次（设定 1.63%）；500 个随机种子都在 150 抽内集齐三套高阶。覆盖 50 抽保底、首次高阶不重复、奖池计数隔离、十连一次扣费、重复返币、余额不足、非法输入、未解锁装备拒绝、保存失败完整回滚、旧存档迁移、重启恢复、机甲动画节点与基础网格还原。
+- `test_gacha_ui.gd` 无界面与原生均通过。原生测试实际发送回车、字符 `+500`、回车提交、G、Tab、Esc 和完整鼠标事件，验证十连、说明弹窗、结果不可重复购买、输入焦点与暂停恢复、解锁穿着、重启保存，以及穿着进入 32 人比赛再回岛。无界面 dummy renderer 没有可用鼠标命中测试，鼠标部分用动作调用；不将其当作原生点击证据。
+- Godot 4.7.2、Apple M4、Metal Forward+、1440×900。最终原生运行退出码 0、`GACHA UI: PASS`，无脚本与渲染报错；逐张检查 `captures/gacha-coin-input.png`、`gacha-workshop.png`、`gacha-ten-results.png`、`gacha-probabilities.png`、`wardrobe-mecha.png`、`mecha-island.png` 及四张 `outfit-*.png`。修复了开盒缩略图与说明文字重叠、临时弹窗尺寸警告和弹窗下方按钮的焦点穿透。最终日志 `captures/gacha-ui-final.log`。
+- 回归 `test_skins.gd`、`test_wardrobe.gd`、`test_island.gd`、`test_new_controls.gd`、`test_skill_input.gd`、完整 `test_race.gd` 均通过。完整比赛固定种子 2026：53.50 秒满 24 人晋级，自动玩家第 9，27 名人机使用道具，攻击命中正常。相关日志 `captures/gacha-regression-*.log`。没有把本次功能回归当作帧时间性能测试。
+- 测试采用独立存档，不向真实玩家账号加币或发放套装。部分无界面退出仍出现已知 ObjectDB/resource 提示；跨平台画面、发行包和用户对造型还原程度的认可未验证。概率来源与本地改编边界见 [盲盒说明](gacha.md)，未宣称完整复制当前国服奖池。

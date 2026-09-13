@@ -64,8 +64,11 @@ func run():
 	enter.pressed = true
 	Input.parse_input_event(enter)
 	for i in range(5): await physics_frame
+	check(game.coin_console.visible and game.screen == 'island', 'Island Enter opens coin input')
+	game.coin_console.close()
+	game.ui_action('join')
 	check_roster(game)
-	check(game.rules.phase == 'countdown' and not game.practice, 'Island Enter starts another 32-player race')
+	check(game.rules.phase == 'countdown' and not game.practice, 'Island join still starts another 32-player race')
 	game.toggle_pause()
 	game.ui_action('island')
 	for i in range(5): await physics_frame

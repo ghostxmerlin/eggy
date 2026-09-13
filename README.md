@@ -8,9 +8,15 @@ Godot 4.7.2 + GDScript 的 Q 版 3D 单机派对游戏。默认从蛋仔岛开�
 
 默认角色为圆润的黄色蛋仔：浅肤色面部、黑色小眼睛、球形触角、短手与白鞋，保留走路摇摆、跳跃伸缩和滚动动画。
 
-在岛上点击右侧“衣柜”或按 **B**，可试穿经典小黄、蜜桃软糖、薄荷汽水、晴空蓝蓝、草莓贝雷和金冠派对六套皮肤。拖动预览或点击左右转按钮查看模型；点击“穿上这套”保存，取消或 Esc 返回。Tab / 方向键切换按钮焦点，空格 / Enter 操作当前按钮。
+在岛上点击右侧“衣柜”或按 **B**，可试穿六套基础外观与常驻、机甲赛季套装。新套装抽到后才能穿上。拖动预览或点击左右转按钮查看模型；点击“穿上这套”保存，取消或 Esc 返回。Tab / 方向键切换按钮焦点，空格 / Enter 操作当前按钮。
 
 皮肤保存在 Godot 用户数据目录中的 `appearance.cfg`，重新启动、参赛和返回岛屿都会保留。换装期间暂停世界，试穿不会更改实际穿着；飞行、腾空或施放技能期间暂不能打开衣柜。皮肤不改变碰撞体、移动速度和技能参数。
+
+## 盲盒与机甲
+
+岛上按 **G** 打开盲盒工坊。**回车 → 输入 `+500` → 回车** 添加 500 蛋币，支持单抽与十连；常驻单抽 10、十连 90，机甲主题单抽 60、十连 540。
+
+本期以自建断罪骑士·极、岚、烈为主打，包含独立装甲、能量眼与推进器。至臻基础概率 1.63%，赛季 50 抽内必得典藏或至臻，前三次高阶不重复，至多 150 抽集齐三套机甲。抽到后在衣柜“赛季套装”穿上；重复返蛋币，余额、收藏和保底自动保存。工坊可查看概率；来源、版本范围与本地改编见 [盲盒规则](docs/gacha.md)。
 
 ## 开发分支
 
@@ -22,7 +28,7 @@ Godot 4.7.2 + GDScript 的 Q 版 3D 单机派对游戏。默认从蛋仔岛开�
 
 小飞机停在岛右侧升降台旁的高平台。乘升降台到顶后向右走，沿坡道进入机舱；靠近会打开灰色舱盖，站稳后自动关盖、起飞，约半分钟绕岛返回。飞机停稳并开盖后恢复行走，沿原坡道下机；留在舱内不会马上再飞。飞行时可右键看风景、Esc 暂停，T 可回广场。
 
-岛上点击“参赛”、按 Enter，或在暂停菜单参赛，进入 1 名玩家 + 31 名人机的巅峰赛。3 秒倒计时后出发，前 24 名晋级，限时 150 秒。重开保留 32 名选手；返回岛屿会移除比赛人机，再次参赛重新组队。岛上 T 回到广场，比赛中 T 返回检查点，Esc 暂停。
+岛上点击“参赛”或在暂停菜单参赛，进入 1 名玩家 + 31 名人机的巅峰赛。3 秒倒计时后出发，前 24 名晋级，限时 150 秒。重开保留 32 名选手；返回岛屿会移除比赛人机，再次参赛重新组队。岛上 T 回到广场，比赛中 T 返回检查点，Esc 暂停。
 
 巅峰赛加入十二种随机道具：传送球、墨汁炸弹、弹球、弹板、炸弹、地雷、云雾弹、加速、垫脚箱、弹簧绳、喷气背包、冷却秒表。碰触赛道问号箱拾取，**按 R 使用**，右键转动镜头调整投掷方向；一次携带一个，人机也会拾取和使用。详见 [道具规则与效果](docs/items.md)。
 
@@ -64,7 +70,8 @@ macOS 也可以在项目目录运行 `./play.command`：启动脚本优先使用
 | R | 使用拾取的道具 |
 | T | 回到最近检查点；岛上回广场 |
 | Esc | 暂停 / 继续；结算页返回首页 |
-| Enter | 岛上参赛 / 再跑一局 |
+| Enter | 岛上输入 `+500` 增加蛋币；结算再跑一局 |
+| G | 岛上打开盲盒工坊 |
 | B | 岛上打开衣柜 |
 | F3 | 显示性能面板 |
 | F12 | 保存当前画面 |
@@ -82,7 +89,9 @@ macOS 也可以在项目目录运行 `./play.command`：启动脚本优先使用
 - `art/cloud_racer.blend`：可编辑角色源文件。
 - `art/build_character.py`：角色建模、语义材质、动画节点和 GLB 导出程序。
 - `scripts/skin_catalog.gd`：皮肤颜色与可替换配饰目录。
-- `scripts/skin_store.gd`：皮肤选择保存与无效存档回退。
+- `scripts/skin_store.gd`：皮肤、钱包、收藏、保底的原子保存与旧存档兼容。
+- `scripts/gacha_rules.gd` / `gacha_room.gd` / `coin_console.gd`：抽取规则、工坊界面与加币指令。
+- `scripts/outfit_models.gd`：自建套装与三种机甲的几何生成。
 - `scripts/wardrobe.gd`：独立 3D 试穿预览、旋转及换装交互。
 - `art/island_monument.blend`：保留圆角修改器的可编辑雕塑源文件。
 - `art/export_letter_meshes.gd`、`art/build_island_letters.py`：导出中文字网格并生成圆角雕塑。
@@ -110,6 +119,8 @@ macOS 也可以在项目目录运行 `./play.command`：启动脚本优先使用
 .tools/Godot.app/Contents/MacOS/Godot --headless --path . --script tests/test_world.gd
 .tools/Godot.app/Contents/MacOS/Godot --headless --path . --quit-after 5000 --script tests/test_items.gd
 .tools/Godot.app/Contents/MacOS/Godot --headless --path . --script tests/test_skins.gd
+.tools/Godot.app/Contents/MacOS/Godot --headless --path . --script tests/test_gacha.gd
+.tools/Godot.app/Contents/MacOS/Godot --path . --script tests/test_gacha_ui.gd -- --visual
 .tools/Godot.app/Contents/MacOS/Godot --headless --path . --script tests/test_wardrobe.gd
 .tools/Godot.app/Contents/MacOS/Godot --headless --path . --fixed-fps 60 --script tests/test_solo.gd
 .tools/Godot.app/Contents/MacOS/Godot --headless --path . --fixed-fps 60 --script tests/test_response.gd

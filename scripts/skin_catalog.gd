@@ -7,6 +7,15 @@ const SKINS := [
 	{'id':'sky','name':'晴空蓝蓝','note':'把一小片晴天穿在身上。','shell':'#7fc3fa','face':'#ffdfbc','shoe':'#fcfcff','sole':'#689dd3','accent':'#468cd4','accessory':''},
 	{'id':'berry','name':'草莓贝雷','note':'小红帽一歪，今天也很可爱。','shell':'#f6becb','face':'#ffe0c1','shoe':'#fff6e8','sole':'#dc6686','accent':'#d94e70','accessory':'beret'},
 	{'id':'royal','name':'金冠派对','note':'戴上小皇冠，快乐地登场。','shell':'#b69ae5','face':'#ffe0bc','shoe':'#fff8df','sole':'#9071b8','accent':'#ffd256','accessory':'crown'},
+	{'id': 'scarf', 'name': '暖绒围巾', 'note': '针织围巾和小挎包，出门兜兜风。', 'shell': '#eeb64e', 'face': '#ffdbac', 'shoe': '#eef3f6', 'sole': '#425770', 'accent': '#eb685c', 'accessory': 'scarf', 'rarity': '基础', 'group': 'basic'},
+	{'id': 'goggles', 'name': '汽水潜水员', 'note': '护目镜、呼吸管和双气瓶。', 'shell': '#60c4b7', 'face': '#ffdbac', 'shoe': '#eef3f6', 'sole': '#425770', 'accent': '#faf297', 'accessory': 'goggles', 'rarity': '高级', 'group': 'basic'},
+	{'id': 'aviator', 'name': '云端飞行员', 'note': '飞行帽和飞行背包，准备起飞。', 'shell': '#d79c77', 'face': '#ffdbac', 'shoe': '#eef3f6', 'sole': '#425770', 'accent': '#925a43', 'accessory': 'aviator', 'rarity': '稀有', 'group': 'basic'},
+	{'id': 'worker', 'name': '工坊学徒', 'note': '工具腰带与扳手，今天也要开工。', 'shell': '#eaaf45', 'face': '#ffdbac', 'shoe': '#eef3f6', 'sole': '#425770', 'accent': '#705847', 'accessory': 'worker', 'rarity': '高级', 'group': 'season'},
+	{'id': 'safety', 'name': '巡检员', 'note': '安全帽与信号背包，巡检开始。', 'shell': '#84b9d8', 'face': '#ffdbac', 'shoe': '#eef3f6', 'sole': '#425770', 'accent': '#ffd55f', 'accessory': 'safety', 'rarity': '高级', 'group': 'season'},
+	{'id': 'rover', 'name': '履带探险家', 'note': '雷达天线与装甲背包，探索未知。', 'shell': '#86aba0', 'face': '#ffdbac', 'shoe': '#eef3f6', 'sole': '#425770', 'accent': '#f3c861', 'accessory': 'rover', 'rarity': '稀有', 'group': 'season'},
+	{'id': 'mecha_gale', 'name': '断罪骑士·岚', 'note': '碧蓝轻甲、侧翼与双推进器。', 'shell': '#3daee2', 'face': '#ffdbac', 'shoe': '#eef3f6', 'sole': '#425770', 'accent': '#68eaff', 'accessory': 'gale', 'rarity': '典藏', 'group': 'season'},
+	{'id': 'mecha_blaze', 'name': '断罪骑士·烈', 'note': '紫色重甲、厚肩盾与能量核心。', 'shell': '#8b67c7', 'face': '#ffdbac', 'shoe': '#eef3f6', 'sole': '#425770', 'accent': '#e28bff', 'accessory': 'blaze', 'rarity': '典藏', 'group': 'season'},
+	{'id': 'mecha', 'name': '断罪骑士·极', 'note': '银白棱甲、锐利蓝眸与背部推进器。', 'shell': '#e2ecf2', 'face': '#ffdbac', 'shoe': '#eef3f6', 'sole': '#425770', 'accent': '#5ce6ff', 'accessory': 'knight', 'rarity': '至臻', 'group': 'season'},
 ]
 
 static func has_skin(id: String) -> bool:
@@ -37,10 +46,19 @@ static func apply(model: Node3D, id: String) -> void:
 	if old:
 		model.remove_child(old)
 		old.queue_free()
+	for limb in model.find_children('*','MeshInstance3D',true,false):
+		limb.visible = true
+		limb.layers = 1
+		var attachment := limb.get_node_or_null('OutfitLimb')
+		if attachment:
+			limb.remove_child(attachment)
+			attachment.queue_free()
 	var accessories := Node3D.new()
 	accessories.name = 'SkinAccessories'
 	model.add_child(accessories)
-	if skin.accessory == 'beret':
+	if skin.get('group','') != '':
+		preload('res://scripts/outfit_models.gd').build(model,accessories,skin)
+	elif skin.accessory == 'beret':
 		accessories.rotation.z = -.13
 		part(accessories,Vector3(0,1.74,.04),Vector3(.60,.15,.52),Color(skin.accent))
 		part(accessories,Vector3(.08,1.89,.04),Vector3(.065,.11,.065),Color('#934356'))
@@ -89,3 +107,6 @@ static func part(parent: Node3D, position: Vector3, scale: Vector3, color: Color
 	node.scale = scale
 	node.material_override = material(color)
 	parent.add_child(node)
+
+static func rarity_color(id: String) -> Color:
+	return {'基础':Color('#82969f'),'高级':Color('#3a967b'),'稀有':Color('#398dc3'),'典藏':Color('#9160c9'),'至臻':Color('#be8030')}.get(get_skin(id).get('rarity','基础'),Color.WHITE)

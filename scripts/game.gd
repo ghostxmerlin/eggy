@@ -43,6 +43,8 @@ var confetti: GPUParticles3D
 @export var skin_save_path := 'user://appearance.cfg'
 var skin_store: RefCounted
 var wardrobe: Control
+var gacha: Control
+var coin_console: Control
 var items: Node3D
 @export var item_seed := -1
 
@@ -81,6 +83,12 @@ func _ready() -> void:
 	wardrobe = preload('res://scripts/wardrobe.gd').new()
 	wardrobe.game = self
 	canvas.add_child(wardrobe)
+	gacha = preload('res://scripts/gacha_room.gd').new()
+	gacha.game = self
+	canvas.add_child(gacha)
+	coin_console = preload('res://scripts/coin_console.gd').new()
+	coin_console.game = self
+	canvas.add_child(coin_console)
 	for cue in ['jump','roll','checkpoint','finish','tick','go','fall']:
 		var channel := AudioStreamPlayer.new()
 		channel.stream = load('res://assets/audio/'+cue+'.wav')
@@ -195,7 +203,7 @@ func reset_racers() -> void:
 		racers[i].reset_to_start(p)
 
 func start_race() -> void:
-	if wardrobe: wardrobe.close()
+	close_modals()
 	release_mouse_drive()
 	music.play_theme('race')
 	if in_island:
@@ -227,7 +235,7 @@ func replace_world(next_world: Node3D) -> void:
 	add_child(course)
 
 func enter_island() -> void:
-	if wardrobe: wardrobe.close()
+	close_modals()
 	items.clear()
 	release_mouse_drive()
 	music.play_theme('island')
@@ -346,6 +354,23 @@ func update_camera(delta: float) -> void:
 	camera.fov = lerpf(camera.fov,target_fov,1-exp(-delta*4))
 
 func _input(event: InputEvent) -> void:
+	if coin_console and coin_console.visible:
+		if event is InputEventKey and event.physical_keycode == KEY_TAB:
+			get_viewport().set_input_as_handled()
+			return
+		if event is InputEventKey and event.pressed and not event.echo and event.physical_keycode == KEY_ESCAPE:
+			coin_console.close()
+			get_viewport().set_input_as_handled()
+		return
+	if gacha and gacha.visible:
+		if event is InputEventKey and event.pressed and not event.echo:
+			if event.physical_keycode == KEY_ESCAPE:
+				gacha.close()
+				get_viewport().set_input_as_handled()
+			elif event.physical_keycode in [KEY_ENTER,KEY_KP_ENTER] and not gacha.result_panel and not gacha.info_panel:
+				coin_console.open()
+				get_viewport().set_input_as_handled()
+		return
 	if wardrobe and wardrobe.visible:
 		if event is InputEventKey and event.pressed and not event.echo and event.physical_keycode == KEY_ESCAPE:
 			wardrobe.close()
@@ -357,8 +382,10 @@ func _input(event: InputEvent) -> void:
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED if mouse_forward else Input.MOUSE_MODE_VISIBLE
 	if event is InputEventKey and event.pressed and not event.echo:
 		match event.physical_keycode:
-			KEY_ENTER:
-				if screen == 'island' and not paused: join_race()
+			KEY_ENTER,KEY_KP_ENTER:
+				if screen == 'island' and not paused:
+					coin_console.open()
+					get_viewport().set_input_as_handled()
 				elif screen in ['menu','result'] and not paused: start_race()
 			KEY_ESCAPE:
 				if screen == 'result': enter_island()
@@ -368,6 +395,7 @@ func _input(event: InputEvent) -> void:
 			KEY_T:
 				if screen in ['racing','island'] and not paused: player.respawn()
 			KEY_B: wardrobe.open()
+			KEY_G: gacha.open()
 			KEY_F3: show_metrics = not show_metrics
 			KEY_F12: screenshot('manual-%d' % Time.get_ticks_msec())
 	if event is InputEventMouseMotion and (mouse_forward or Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT)) and screen in ['racing','island'] and not paused:
@@ -387,12 +415,17 @@ func release_mouse_drive() -> void:
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_APPLICATION_FOCUS_OUT: release_mouse_drive()
 
+func modal_open() -> bool:
+	return (wardrobe and wardrobe.visible) or (gacha and gacha.visible) or (coin_console and coin_console.visible)
+
 func ui_action(action: String) -> void:
-	if wardrobe and wardrobe.visible: return
+	if modal_open(): return
 	match action:
 		'join': join_race()
 		'start','retry','restart': start_race()
 		'wardrobe': wardrobe.open()
+		'gacha': gacha.open()
+		'coins': coin_console.open()
 		'island': enter_island()
 		'resume': paused = false
 
@@ -490,3 +523,8 @@ func output_path(filename: String) -> String:
 		path = OS.get_user_data_dir().path_join('captures')
 		DirAccess.make_dir_recursive_absolute(path)
 	return path.path_join(filename)
+
+func close_modals() -> void:
+	if coin_console: coin_console.close()
+	if gacha: gacha.shutdown()
+	if wardrobe: wardrobe.close()
