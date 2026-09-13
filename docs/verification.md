@@ -66,3 +66,19 @@ Apple M4 Pro，Godot 4.7.2 Metal Forward+，1440×900；单独运行一个游戏
 - 操控响应、技能碰撞、飞机完整往返回归通过。数字键测试在多个无界面游戏同时运行时出现过 3–5 键触发断言失败，单独重跑通过；未据此修改游戏技能参数。无界面退出仍存在此前的 ObjectDB/resource 警告。
 - 发现并修复衣柜吞掉 Tab / 方向键的问题；焦点落在“取消”时按 Enter 不会保存试穿，回归已覆盖。
 - 这些结果验证实现与实际渲染，不等同于用户对原版形象还原程度的最终认可。
+
+## 2026-09-13：恢复 32 人巅峰赛
+
+- 默认启动仍为蛋仔岛；“参赛”、岛上 Enter 和暂停菜单参赛统一进入 1 名玩家 + 31 名人机比赛，3 秒倒计时、150 秒限时、前 24 名晋级。复用原有 AI、物理与技能，保留玩家实例和已穿皮肤；重开不重复添加人机，返回岛屿会清理比赛人机。
+- `test_island.gd` 通过：精确核对 1 名玩家、31 名 AI 和唯一选手 ID；倒计时、暂停冻结、玩家晋级、重试、返回后销毁旧人机、Enter 再次参赛及暂停菜单参赛均覆盖。
+- `test_world.gd`、`test_wardrobe.gd` 通过；`test_solo.gd -- --practice` 通过，单人入口仍无倒计时、无时限并可重开及完成赛道。
+- 普通游戏窗口实际鼠标点击“参赛”后，确认 31 名人机向前跑动、排名为第 32 名、晋级计数及倒计时正常显示；Esc 暂停后点击“返回岛屿”成功，最终保留岛屿窗口供用户试玩。
+- 在新机 Apple M4 上使用 Godot `4.7.2.stable.official.ed1daf0bf`、Metal Forward+、1440×900 原生窗口运行完整比赛。从岛屿实际参赛动作创建选手，再通过正常移动、跳跃、滚动接口自动控制玩家；两轮均在 43.30 秒到达终点并获第 1 名，82.22 秒满 24 名晋级，测试退出码为 0。
+- 本地日志：`captures/multiplayer-island.log`、`multiplayer-world.log`、`multiplayer-wardrobe.log`、`multiplayer-solo.log`、`multiplayer-full-native.log`。原生画面：`race-32-island-entry.png`、`race-32-countdown.png`、`race-32-running.png`、`race-32-result.png`。截图前将测试窗口移到前台，并等待 HUD 绘制，避免记录到后台窗口或上一帧的画面。
+- 岛屿、衣柜、单人测试及第二轮原生完整比赛退出仍出现此前记录的 ObjectDB/resource 释放提示；无脚本解析或原生渲染报错。本次验证功能与画面，未进行全程帧时间分布测量，不据此宣称 32 人全程稳定帧率。
+
+原生完整比赛复测命令：
+
+```sh
+.tools/Godot.app/Contents/MacOS/Godot --path . --quit-after 12000 --log-file captures/multiplayer-full-native.log --script tests/test_race.gd -- --visual
+```

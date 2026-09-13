@@ -5,6 +5,7 @@ const Course = preload('res://scripts/course.gd')
 const Island = preload('res://scripts/island.gd')
 var in_island := false
 const Racer = preload('res://scripts/racer.gd')
+const RACE_SIZE := 32
 const HUD = preload('res://scripts/hud.gd')
 @export var practice := true
 var rules = Rules.new()
@@ -55,13 +56,8 @@ func _ready() -> void:
 	build_lighting()
 	course = Island.new() if in_island else Course.new()
 	add_child(course)
-	for i in range(1 if practice else 32):
-		var racer := Racer.new()
-		racer.game = self
-		racer.racer_id = i
-		racer.is_player = i == 0
-		add_child(racer)
-		racers.append(racer)
+	for i in range(1 if practice else RACE_SIZE):
+		add_racer(i)
 	player = racers[0]
 	player.set_skin(skin_store.selected_id)
 	reset_racers()
@@ -175,6 +171,18 @@ func build_lighting() -> void:
 	fill.light_energy = .16
 	add_child(fill)
 
+func add_racer(id: int) -> void:
+	var racer := Racer.new()
+	racer.game = self
+	racer.racer_id = id
+	racer.is_player = id == 0
+	add_child(racer)
+	racers.append(racer)
+
+func join_race() -> void:
+	practice = false
+	start_race()
+
 func reset_racers() -> void:
 	for i in range(racers.size()):
 		var p := Vector3((i%8-3.5)*2.15,.08,2+floorf(i/8.0)*2.3)
@@ -189,6 +197,8 @@ func start_race() -> void:
 		in_island = false
 		configure_render_scale()
 		replace_world(Course.new())
+	for i in range(racers.size(), 1 if practice else RACE_SIZE):
+		add_racer(i)
 	paused = false
 	screen = 'racing'
 	rules.start(practice)
@@ -347,7 +357,8 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
 		match event.physical_keycode:
 			KEY_ENTER:
-				if screen in ['menu','result','island'] and not paused: start_race()
+				if screen == 'island' and not paused: join_race()
+				elif screen in ['menu','result'] and not paused: start_race()
 			KEY_ESCAPE:
 				if screen == 'result': enter_island()
 				elif screen in ['racing','island']: toggle_pause()
@@ -376,7 +387,8 @@ func _notification(what: int) -> void:
 func ui_action(action: String) -> void:
 	if wardrobe and wardrobe.visible: return
 	match action:
-		'join','start','retry','restart': start_race()
+		'join': join_race()
+		'start','retry','restart': start_race()
 		'wardrobe': wardrobe.open()
 		'island': enter_island()
 		'resume': paused = false

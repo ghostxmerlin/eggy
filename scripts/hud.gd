@@ -173,7 +173,7 @@ func draw_island() -> void:
 	if not is_instance_valid(game.player.vehicle): button('wardrobe',Rect2(1220,646,184,54),'衣柜 · B',false)
 	panel(Rect2(1064,723,342,145),WHITE,28,true)
 	txt('云端冲冲赛',Vector2(1087,757),23,INK,true)
-	txt('第一关 · 单人练习',Vector2(1087,782),16,TEAL)
+	txt('第一关 · 32 位选手 · 前 24 名晋级',Vector2(1087,782),16,TEAL)
 	button('join',Rect2(1085,799,300,53),'参赛')
 	txt('Esc 休息一下  /  R 回到广场',Vector2(37,893),14,INK)
 
