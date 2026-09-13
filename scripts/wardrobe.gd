@@ -97,13 +97,14 @@ func build_preview() -> void:
 	viewport.size = Vector2i(510,438)
 	viewport.transparent_bg = true
 	viewport.own_world_3d = true
+	viewport.mesh_lod_threshold = 0.0
 	viewport.msaa_3d = Viewport.MSAA_2X
 	viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
 	container.add_child(viewport)
 	var world := Node3D.new()
 	viewport.add_child(world)
 	var environment := WorldEnvironment.new()
-	var settings := Environment.new()
+	var settings := preload('res://scripts/outfit_lighting.gd').environment()
 	settings.background_mode = Environment.BG_COLOR
 	settings.background_color = Color('#e5f2e6')
 	settings.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR

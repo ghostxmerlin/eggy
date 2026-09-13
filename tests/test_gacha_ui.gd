@@ -85,7 +85,9 @@ func run():
 	game.skin_store.pity = 49
 	game.skin_store.rng.seed = 42
 	await click(Vector2(1120,729))
-	await frames(90)
+	for i in range(480):
+		await frames(1)
+		if not game.gacha.busy: break
 	check(game.gacha.latest.size() == 10 and game.skin_store.total_draws == 10,'Mouse ten pull awards exactly ten')
 	check(is_instance_valid(game.gacha.result_panel),'Results appear after purchase')
 	check(game.gacha.ten_button.disabled,'Reward overlay disables purchases underneath')

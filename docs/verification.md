@@ -126,3 +126,13 @@ Apple M4 Pro，Godot 4.7.2 Metal Forward+，1440×900；单独运行一个游戏
 - Godot 4.7.2、Apple M4、Metal Forward+、1440×900。最终原生运行退出码 0、`GACHA UI: PASS`，无脚本与渲染报错；逐张检查 `captures/gacha-coin-input.png`、`gacha-workshop.png`、`gacha-ten-results.png`、`gacha-probabilities.png`、`wardrobe-mecha.png`、`mecha-island.png` 及四张 `outfit-*.png`。修复了开盒缩略图与说明文字重叠、临时弹窗尺寸警告和弹窗下方按钮的焦点穿透。最终日志 `captures/gacha-ui-final.log`。
 - 回归 `test_skins.gd`、`test_wardrobe.gd`、`test_island.gd`、`test_new_controls.gd`、`test_skill_input.gd`、完整 `test_race.gd` 均通过。完整比赛固定种子 2026：53.50 秒满 24 人晋级，自动玩家第 9，27 名人机使用道具，攻击命中正常。相关日志 `captures/gacha-regression-*.log`。没有把本次功能回归当作帧时间性能测试。
 - 测试采用独立存档，不向真实玩家账号加币或发放套装。部分无界面退出仍出现已知 ObjectDB/resource 提示；跨平台画面、发行包和用户对造型还原程度的认可未验证。概率来源与本地改编边界见 [盲盒说明](gacha.md)，未宣称完整复制当前国服奖池。
+
+## 2026-09-13：皮肤连接与开盒演出精修
+
+- 修复装甲缺背面、凹多边形扇形切分错误与正面法线朝内；新增封闭内壳、倒角装甲、安装架与动画关节桥接。头角、肩甲、手套、护膝及推进器分层重做，普通套装补齐背带和连续管路。预览摄影棚反射恢复银白金属层次。
+- 实际缩略图中发现面部随机色块，关闭预览 SubViewport 的自动网格 LOD 后消失；只影响衣柜、开盒展示及卡片，不修改比赛全局画质。固定装甲按材质合并并保留逆转置法线，专项测试的法线误差约 0.000050（ArrayMesh 法线量化）。没有将表面数量减少当作帧时间性能结论。
+- 原生 `test_gacha_presentation.gd -- --visual` 最终 PASS、退出码 0：蓄能→开壳→角色登场→结果，单抽大卡与十连、Esc 跳过不重抽/扣币、演出前保存奖励、切场景清理、四肢动画连接、凹装甲各边恰有两个相邻三角形、正面法线及合并后法线验证均通过。
+- 原生 `test_gacha_ui.gd -- --visual` PASS、退出码 0：实际鼠标十连、回车输入加币、焦点/暂停恢复、解锁穿着及穿着进入 32 人赛后返回。出现一次 macOS IMK 输入法 mach-port 提示，没有 GDScript 或渲染错误。
+- Godot 4.7.2、Apple M4、Metal Forward+、1440×900。检查正面、侧面、背面与斜角的 `captures/knight-structure-*.png`，以及 `gacha-charge.png`、`gacha-opening.png`、`gacha-hero.png`、`gacha-single-polished.png`、`gacha-ten-results.png`、`outfit-goggles.png`、`mecha-island.png`。均为实际游戏截图，未用概念图替代。
+- 无界面 `test_skins.gd`、`test_wardrobe.gd`、`test_gacha.gd`、`test_skill_input.gd`、`test_race.gd` 全部 PASS；完整赛种子 2026，53.50 秒满 24 人晋级，自动玩家第 9，27 名人机使用道具。衣柜和比赛退出仍有既有 ObjectDB/resource 提示。所有测试使用隔离存档。
+- 本轮未作帧时间采样、其他平台或发行包验证；造型是依据参考重制的自建模型，用户对还原程度的认可仍需试玩反馈。

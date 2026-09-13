@@ -18,6 +18,8 @@ Godot 4.7.2 + GDScript 的 Q 版 3D 单机派对游戏。默认从蛋仔岛开�
 
 本期以自建断罪骑士·极、岚、烈为主打，包含独立装甲、能量眼与推进器。至臻基础概率 1.63%，赛季 50 抽内必得典藏或至臻，前三次高阶不重复，至多 150 抽集齐三套机甲。抽到后在衣柜“赛季套装”穿上；重复返蛋币，余额、收藏和保底自动保存。工坊可查看概率；来源、版本范围与本地改编见 [盲盒规则](docs/gacha.md)。
 
+机甲使用封闭的分层装甲、倒角边缘和随动作连接的关节；衣柜增加金属环境反射。抽取会播放盲盒蓄能、上下开壳、品质光环与粒子、角色登场及音效；十连奖励依次亮起，单抽使用大卡片展示。点击“跳过动画”或按 Esc 可直接查看已抽到的结果。
+
 ## 开发分支
 
 后续开发在 `dev` 分支进行，每个功能完成相应自动测试及实际画面检查后合并到 `main`，同步 GitHub，然后切回 `dev` 继续开发。`main` 保留已通过验证的版本。
@@ -91,7 +93,9 @@ macOS 也可以在项目目录运行 `./play.command`：启动脚本优先使用
 - `scripts/skin_catalog.gd`：皮肤颜色与可替换配饰目录。
 - `scripts/skin_store.gd`：皮肤、钱包、收藏、保底的原子保存与旧存档兼容。
 - `scripts/gacha_rules.gd` / `gacha_room.gd` / `coin_console.gd`：抽取规则、工坊界面与加币指令。
-- `scripts/outfit_models.gd`：自建套装与三种机甲的几何生成。
+- `scripts/outfit_models.gd` / `knight_model.gd` / `outfit_rig.gd`：套装几何、三种机甲与动态关节连接。
+- `scripts/gacha_effects.gd` / `outfit_lighting.gd`：开盒粒子、3D 演出及模型预览照明。
+- `art/build_gacha_audio.py`：原创开盒音效生成器（Python 标准库）。
 - `scripts/wardrobe.gd`：独立 3D 试穿预览、旋转及换装交互。
 - `art/island_monument.blend`：保留圆角修改器的可编辑雕塑源文件。
 - `art/export_letter_meshes.gd`、`art/build_island_letters.py`：导出中文字网格并生成圆角雕塑。

@@ -28,14 +28,19 @@
 
 ## 保存与测试
 
+开盒演出顺序为蓄能、上下壳分离、最高品质奖励登场、完整结果展示。粒子、动态光环和卡片流光按品质变色，至臻使用金色；配有原创蓄能、开壳与登场音效。单抽显示大卡片，十连按抽取顺序逐张展开。点击“跳过动画”或 Esc 跳到同一批结果，不重抽、不重复扣币；结果页点击卡片可返回工坊查看该外观。
+
+机甲以连续内壳支撑封闭倒角装甲，背部安装架连接推进器与翼片，四肢连接随实际动画更新。普通套装增加背带、背包安装块与连续呼吸管。预览使用程序生成的摄影棚反射；关闭预览网格自动降级，避免缩略图中贴合的面部穿过外壳。固定配件按材质合并，非均匀缩放使用逆转置矩阵处理法线。
+
 `user://appearance.cfg` 同时保存穿着、蛋币、已拥有套装、赛季计数、累计抽数与最近 50 条结果。旧六套外观继续免费拥有，旧的只含皮肤选择的存档会自动补齐默认字段。提交交易时先写临时文件再重命名，成功后才更新内存；失败不扣币、不解锁，并恢复抽取随机状态。余额上限 999999999，指令只接受正整数；十连是完整的一次保存。
 
-`scripts/gacha_rules.gd` 定义规则；`skin_store.gd` 管存档和原子交易；`gacha_room.gd` 管界面与结果；`coin_console.gd` 管输入；`outfit_models.gd` 生成套装几何。机甲模型隐藏原基础网格的渲染层，恢复基础外观时移除装甲并还原显示；不会改动碰撞层。
+`scripts/gacha_rules.gd` 定义规则；`skin_store.gd` 管存档和原子交易；`gacha_room.gd` 管界面与结果，`gacha_effects.gd` 管演出；`coin_console.gd` 管输入；`outfit_models.gd`、`knight_model.gd` 生成套装几何，`outfit_rig.gd` 连接动画关节。机甲模型隐藏原基础网格的渲染层，恢复基础外观时移除装甲并还原显示；不会改动碰撞层。
 
 ```sh
 .tools/Godot.app/Contents/MacOS/Godot --headless --path . --fixed-fps 60 --quit-after 3000 --script tests/test_gacha.gd
 .tools/Godot.app/Contents/MacOS/Godot --headless --path . --fixed-fps 60 --quit-after 3000 --script tests/test_gacha_ui.gd
 .tools/Godot.app/Contents/MacOS/Godot --path . --fixed-fps 60 --quit-after 3000 --script tests/test_gacha_ui.gd -- --visual
+.tools/Godot.app/Contents/MacOS/Godot --path . --fixed-fps 60 --quit-after 3000 --script tests/test_gacha_presentation.gd -- --visual
 ```
 
 测试使用独立 `test-*.cfg`，不增加玩家余额、不解锁玩家物品。无界面 UI 测试的鼠标路径使用动作调用，真实点击由原生 `--visual` 运行验证。源代码构建与原生窗口已验证；发行包、其他平台及用户对还原效果的认可仍需单独确认。

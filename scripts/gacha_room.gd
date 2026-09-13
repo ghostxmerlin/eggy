@@ -10,6 +10,12 @@ var busy := false
 var reveal_tween: Tween
 var latest: Array = []
 var result_cards: Array = []
+var effects: Control
+var reveal_phase := 'idle'
+var hero_title: Label
+var hero_note: Label
+var skip_button: Button
+var cues: Dictionary = {}
 
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -40,6 +46,12 @@ func _ready() -> void:
 		close()
 		game.wardrobe.open()
 	).add_theme_font_size_override('font_size',18)
+	for cue in ['charge','open','rare']:
+		var player := AudioStreamPlayer.new()
+		player.stream = load('res://assets/audio/gacha_'+cue+'.wav')
+		player.volume_db = -8
+		add_child(player)
+		cues[cue] = player
 	resized.connect(rescale)
 	rescale()
 	switch_pool('season')
@@ -103,7 +115,7 @@ func pull(count: int) -> void:
 		return
 	latest = result.rewards
 	refresh_balance()
-	show_rewards()
+	start_reveal()
 
 func overlay() -> Control:
 	set_underlay_enabled(false)
@@ -124,52 +136,138 @@ func overlay() -> Control:
 func move_to(node: Control, target: Control) -> void:
 	node.reparent(target)
 
+func start_reveal() -> void:
+	set_underlay_enabled(false)
+	busy = true
+	reveal_phase = 'charge'
+	result_panel = Control.new()
+	result_panel.size = Vector2(1440,900)
+	layout.add_child(result_panel)
+	effects = preload('res://scripts/gacha_effects.gd').new()
+	result_panel.add_child(effects)
+	var featured: String = latest[0].id
+	var ranks := {'基础':0,'高级':1,'稀有':2,'典藏':3,'至臻':4}
+	for reward in latest:
+		if ranks[Catalog.get_skin(reward.id).rarity] > ranks[Catalog.get_skin(featured).rarity]: featured = reward.id
+	effects.set_prize(featured)
+	hero_title = label('正在开启盲盒',Vector2(310,95),40,true)
+	hero_title.size.x = 820
+	hero_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	hero_title.add_theme_color_override('font_color',Color('#f3f8ff'))
+	move_to(hero_title,result_panel)
+	hero_note = label('惊喜即将揭晓',Vector2(310,718),24,true)
+	hero_note.size.x = 820
+	hero_note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	hero_note.add_theme_color_override('font_color',Color('#a7d7ff'))
+	move_to(hero_note,result_panel)
+	skip_button = button('跳过动画',Rect2(1200,45,176,46),finish_reveal)
+	skip_button.add_theme_font_size_override('font_size',18)
+	move_to(skip_button,result_panel)
+	skip_button.grab_focus()
+	cues.charge.play()
+	reveal_tween = create_tween()
+	reveal_tween.tween_interval(.85)
+	reveal_tween.tween_callback(func():
+		reveal_phase = 'opening'
+		effects.burst()
+		cues.open.play()
+	)
+	reveal_tween.tween_property(effects,'opening',1.0,.55).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+	reveal_tween.tween_callback(func():
+		reveal_phase = 'hero'
+		effects.reveal()
+		hero_title.text = Catalog.get_skin(featured).rarity+'外观登场'
+		hero_title.add_theme_color_override('font_color',effects.accent)
+		hero_note.text = Catalog.get_skin(featured).name
+		cues.rare.play()
+	)
+	reveal_tween.tween_interval(1.75 if ranks[Catalog.get_skin(featured).rarity] >= 3 else 1.10)
+	reveal_tween.tween_callback(finish_reveal)
+
+func finish_reveal() -> void:
+	if reveal_phase not in ['charge','opening','hero']: return
+	if reveal_tween and reveal_tween.is_valid(): reveal_tween.kill()
+	cues.charge.stop()
+	cues.open.stop()
+	hero_title.hide()
+	hero_note.hide()
+	skip_button.hide()
+	effects.settle()
+	reveal_phase = 'cards'
+	show_rewards()
+
 func show_rewards() -> void:
-	result_panel = overlay()
 	result_cards.clear()
-	move_to(label('开启盲盒',Vector2(177,154),34,true),result_panel)
-	move_to(label('已收入收藏 · 点击奖励可查看外观',Vector2(177,201),19),result_panel)
+	var title := label('恭喜获得',Vector2(310,113),42,true)
+	title.size.x = 820
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_color_override('font_color',Color('#fff3cf'))
+	move_to(title,result_panel)
+	var note := label('已收入收藏 · 点击奖励查看外观',Vector2(310,176),18)
+	note.size.x = 820
+	note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	note.add_theme_color_override('font_color',Color('#bed7f8'))
+	move_to(note,result_panel)
 	for i in range(latest.size()):
 		var reward: Dictionary = latest[i]
 		var skin := Catalog.get_skin(reward.id)
-		var suffix: String = '+%d 蛋币' % reward.refund if reward.duplicate else '新获得'
-		var card := button(skin.rarity+'\n'+skin.name+'\n'+suffix+(' · 保底' if reward.guaranteed else ''),Rect2(177+(i%5)*219,271+floori(i/5.0)*179,209,161),func():
+		var suffix: String = '重复 · +%d 蛋币' % reward.refund if reward.duplicate else '新获得'
+		var rect := Rect2(177+(i%5)*219,242+floori(i/5.0)*196,209,180)
+		if latest.size() == 1: rect = Rect2(590,254,260,315)
+		var card := button('',rect,func():
 			dismiss_rewards()
 			select_skin(reward.id)
 		)
-		card.add_theme_font_size_override('font_size',16)
-		card.alignment = HORIZONTAL_ALIGNMENT_CENTER
-		card.text = ''
+		var tint := Catalog.rarity_color(reward.id).lightened(.22)
+		var skin_style := style(Color('#1a294d').lerp(tint,.16),tint)
+		skin_style.shadow_color = Color(tint,.24)
+		skin_style.shadow_size = 9
+		card.add_theme_stylebox_override('normal',skin_style)
+		card.add_theme_stylebox_override('disabled',skin_style)
+		card.add_theme_stylebox_override('hover',style(Color('#344e72'),Color('#fff2c2')))
+		card.clip_contents = true
+		var shine := ColorRect.new()
+		shine.size = rect.size
+		shine.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var material := ShaderMaterial.new()
+		material.shader = preload('res://assets/shaders/gacha_card.gdshader')
+		material.set_shader_parameter('tint',tint)
+		shine.material = material
+		card.add_child(shine)
+		add_thumbnail(card,reward.id)
 		var caption := Label.new()
-		caption.text = skin.name+' · '+skin.rarity+'\n'+suffix+(' · 保底' if reward.guaranteed else '')
-		caption.position = Vector2(4,100)
-		caption.size = Vector2(201,43)
+		caption.text = skin.name+'\n'+skin.rarity+' · '+suffix+(' · 保底' if reward.guaranteed else '')
+		caption.position = Vector2(4,116 if latest.size() > 1 else 246)
+		caption.size = Vector2(rect.size.x-8,53)
 		caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		caption.add_theme_font_override('font',bold)
-		caption.add_theme_font_size_override('font_size',16)
-		caption.add_theme_color_override('font_color',Color('#24455b'))
+		caption.add_theme_font_size_override('font_size',16 if latest.size() > 1 else 20)
+		caption.add_theme_color_override('font_color',Color('#f4f7ff'))
 		caption.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		card.add_child(caption)
 		card.tooltip_text = caption.text
-		add_thumbnail(card,reward.id)
-		card.add_theme_stylebox_override('normal',style(Catalog.rarity_color(reward.id).lightened(.80),Catalog.rarity_color(reward.id)))
 		move_to(card,result_panel)
 		result_cards.append(card)
+		card.pivot_offset = rect.size*.5
+		card.scale = Vector2(.86,.86)
 		card.modulate.a = 0
 		card.disabled = true
-	var done := button('收下 · 继续',Rect2(530,683,380,58),dismiss_rewards)
+	var done := button('收下 · 继续',Rect2(530,715,380,58),dismiss_rewards)
+	done.add_theme_stylebox_override('normal',style(Color('#ffe2a0'),Color('#fff1bf')))
 	move_to(done,result_panel)
 	done.disabled = true
 	busy = true
-	reveal_tween = create_tween()
-	for card in result_cards:
-		reveal_tween.tween_property(card,'modulate:a',1.0,.09)
-	reveal_tween.tween_callback(func():
+	reveal_tween = create_tween().set_parallel(true)
+	for i in range(result_cards.size()):
+		var card: Control = result_cards[i]
+		reveal_tween.tween_property(card,'modulate:a',1.0,.22).set_delay(i*.055)
+		reveal_tween.tween_property(card,'scale',Vector2.ONE,.38).set_delay(i*.055).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	reveal_tween.chain().tween_callback(func():
 		busy = false
+		reveal_phase = 'results'
 		for card in result_cards: card.disabled = false
 		done.disabled = false
 		done.grab_focus()
-		game.sound('checkpoint')
 	)
 
 func dismiss_rewards() -> void:
@@ -178,6 +276,9 @@ func dismiss_rewards() -> void:
 		result_panel.hide()
 		result_panel.queue_free()
 		result_panel = null
+	effects = null
+	reveal_phase = 'idle'
+	for cue in cues.values(): cue.stop()
 	set_underlay_enabled(true)
 	wear_button.grab_focus()
 
@@ -200,7 +301,9 @@ func dismiss_info() -> void:
 	wear_button.grab_focus()
 
 func close() -> void:
-	if busy: return
+	if busy:
+		finish_reveal()
+		return
 	if is_instance_valid(result_panel):
 		dismiss_rewards()
 		return
@@ -218,6 +321,7 @@ func _draw() -> void:
 func shutdown() -> void:
 	if reveal_tween and reveal_tween.is_valid(): reveal_tween.kill()
 	busy = false
+	for cue in cues.values(): cue.stop()
 	dismiss_rewards()
 	dismiss_info()
 	super.close()
@@ -230,19 +334,24 @@ func set_underlay_enabled(enabled: bool) -> void:
 
 func add_thumbnail(card: Button, id: String) -> void:
 	var container := SubViewportContainer.new()
-	container.position = Vector2(42,4)
-	container.size = Vector2(125,98)
+	container.position = Vector2(24,5) if latest.size() > 1 else Vector2(10,12)
+	container.size = Vector2(161,112) if latest.size() > 1 else Vector2(240,234)
 	container.stretch = true
 	container.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	card.add_child(container)
 	var view := SubViewport.new()
-	view.size = Vector2i(125,98)
+	view.size = Vector2i(container.size)
 	view.transparent_bg = true
 	view.own_world_3d = true
+	# Auto-LOD simplifies the fitted face independently of the shell at card size.
+	view.mesh_lod_threshold = 0.0
 	view.render_target_update_mode = SubViewport.UPDATE_ONCE
 	container.add_child(view)
 	var world := Node3D.new()
 	view.add_child(world)
+	var lighting := WorldEnvironment.new()
+	lighting.environment = preload('res://scripts/outfit_lighting.gd').environment()
+	world.add_child(lighting)
 	var model := preload('res://assets/models/racer.glb').instantiate()
 	world.add_child(model)
 	Catalog.apply(model,id)

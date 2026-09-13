@@ -330,3 +330,5 @@ func animate(delta: float) -> void:
 		node.rotation.x = phase*.35
 		if not grounded and part.begins_with('Arm'): node.rotation.z = sign_value*-.65
 		else: node.rotation.z = sign_value*(.12+sin(bob)*.12)*walk_weight if part.begins_with('Arm') else 0
+	var outfit_rig := model.get_node_or_null('SkinAccessories/OutfitRig')
+	if outfit_rig: outfit_rig.sync()
