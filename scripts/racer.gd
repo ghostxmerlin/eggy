@@ -113,7 +113,7 @@ func request_roll() -> void:
 	if active and not finished and not game.paused and not is_instance_valid(vehicle) and not skills.controlled() and skills.dive_left <= 0 and skills.attack_left <= 0 and roll_cooldown <= 0:
 		roll_left = .85
 		roll_cooldown = 3.3
-		if is_player: game.sound('roll')
+		game.action_sound('roll',self)
 
 func board_vehicle(ride: Node3D) -> void:
 	leave_vehicle()
@@ -173,7 +173,7 @@ func respawn() -> void:
 	hit_cooldown = .6
 	invulnerable = 1.0
 	reset_physics_interpolation()
-	if is_player: game.sound('fall')
+	game.action_sound('fall',self)
 
 func clear_item() -> void:
 	item_state.clear()
@@ -280,9 +280,11 @@ func _physics_process(delta: float) -> void:
 		jump_buffer = 0
 		coyote = 0
 		squash = 1.18
-		if is_player: game.sound('jump')
+		game.action_sound('jump',self)
 	var incoming_velocity := velocity
+	var floor_before := is_on_floor()
 	move_and_slide()
+	if is_instance_valid(game.feedback): game.feedback.movement(self,floor_before,incoming_velocity)
 	if skills.dive_left > 0: skills.resolve_dive_collisions(incoming_velocity)
 	if active and not finished:
 		var impulse: Vector3 = game.course.hazard_at(position)
@@ -290,6 +292,7 @@ func _physics_process(delta: float) -> void:
 			velocity = impulse
 			hit_cooldown = .8
 			squash = .75
+			game.action_sound('knockdown',self)
 		if position.y < -6: respawn()
 		if not game.in_island and position.y > -.2 and position.y < 2.5 and absf(position.x)<9.3:
 			for i in range(1,game.course.CHECKPOINTS.size()):

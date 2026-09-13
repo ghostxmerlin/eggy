@@ -40,6 +40,8 @@ Godot 4.7.2 + GDScript 的 Q 版 3D 单机派对游戏。默认从蛋仔岛开�
 
 喷泉使用连续的宽扁水带、动态高光和落水涟漪。蛋仔岛播放轻快木琴与拨弦配乐，比赛切换到更快的合成旋律与鼓点；两首原创无歌词音乐分别循环播放，场景切换用 1.2 秒淡入淡出，暂停时音乐继续。
 
+跳跃、落地、碰撞、受击倒地、掉落复位和五种技能都有动作音效，挥空与实际命中分别反馈；附近人机的声音按距离衰减。玩家会随机说“来不及了”“搞快点，搞快点”等 13 句中文短台词，按赶路、技能、受挫和冲线触发，带头顶字幕和重复间隔。说话时背景音乐暂时降低，暂停会冻结动作音效与语音。详见 [声音说明](docs/audio.md)。
+
 单人练习仍可通过 `./play.command -- --practice` 进入，不限时、不淘汰。`./play.command -- --race` 直接打开 32 人比赛准备界面；默认启动仍是蛋仔岛。
 
 当前手感调整：加快玩家起步、反向、松键刹停和镜头跟随。窗口为 1440×900；岛屿使用 90% 内部渲染比例与 FSR 重建、赛道使用 100%，搭配 2× MSAA 和两级动态阴影；单人性能对照和限制见 [调试记录](docs/verification.md)。
@@ -105,6 +107,8 @@ macOS 也可以在项目目录运行 `./play.command`：启动脚本优先使用
 - `art/build_assets.py`：Blender 资产与原创音效生成脚本。
 - `art/build_music.py`：两首原创 32 小节配乐的乐谱与合成源程序，使用 Blender 自带 Python / NumPy 生成 WAV，再用 ffmpeg 编码为游戏里的 Ogg Vorbis。
 - `scripts/background_music.gd`：场景音乐、循环和淡入淡出。
+- `scripts/gameplay_audio.gd`：动作声音、附近人机空间音效、随机中文台词及字幕。
+- `art/build_action_audio.py` / `art/build_character_voice.py`：动作音效和离线语音生成器。
 - `scripts/fountain.gd`：连续水带网格、水面与飞溅动画。
 - `scripts/course.gd`：赛道、机关与地图装饰。
 - `scripts/racer.gd`：共享角色运动与动画。

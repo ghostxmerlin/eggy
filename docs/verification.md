@@ -136,3 +136,12 @@ Apple M4 Pro，Godot 4.7.2 Metal Forward+，1440×900；单独运行一个游戏
 - Godot 4.7.2、Apple M4、Metal Forward+、1440×900。检查正面、侧面、背面与斜角的 `captures/knight-structure-*.png`，以及 `gacha-charge.png`、`gacha-opening.png`、`gacha-hero.png`、`gacha-single-polished.png`、`gacha-ten-results.png`、`outfit-goggles.png`、`mecha-island.png`。均为实际游戏截图，未用概念图替代。
 - 无界面 `test_skins.gd`、`test_wardrobe.gd`、`test_gacha.gd`、`test_skill_input.gd`、`test_race.gd` 全部 PASS；完整赛种子 2026，53.50 秒满 24 人晋级，自动玩家第 9，27 名人机使用道具。衣柜和比赛退出仍有既有 ObjectDB/resource 提示。所有测试使用隔离存档。
 - 本轮未作帧时间采样、其他平台或发行包验证；造型是依据参考重制的自建模型，用户对还原程度的认可仍需试玩反馈。
+
+## 2026-09-13：动作音效与随机中文台词
+
+- 新增 14 种动作声音及 13 句中文台词，接入真实起跳、落地、侧面碰撞、强受击、机关击飞、技能施放/命中/解冻、道具使用与复位。玩家 4 通道、附近人机 6 空间通道，配距离限制、同类节流与独立音频 RNG。台词按场景随机播放，带字幕、间隔与音乐压低。规则和生成来源见 [声音说明](audio.md)。
+- `test_gameplay_audio.gd` 无界面与最终原生均 PASS：实际起跳一次、空中无效跳跃静音、落地与静止区分、五技能及挥击命中、强受击和解冻、实际撞墙及连续顶墙抑制、远近人机、语音不重叠/连续重复、音频 RNG 不改变玩法 RNG、暂停/恢复、场景切换停止、倒计时出发/最后 30 秒催促仅一次/冲线庆祝/岛上跑动闲聊。
+- 原生 Godot 4.7.2、Apple M4、Metal Forward+、1440×900。关闭 BGM 后用 `AudioEffectCapture` 检查实际主混音：14 种动作声单项峰值约 0.266–0.293，语音峰值 0.621，均有输出且单项低于削波阈值 1.0；不是仅检查文件存在或 `playing` 标记。日志 `captures/action-audio-native.log`，字幕截图 `captures/character-voice-subtitle.png`。第一次扩展后的原生专项曾因语音未触发而报空流，改为隔离测试期间外部游戏输入并保留前置状态日志后复测 PASS；未把无 PASS 的退出码 0 当作通过。
+- 原生 `test_music.gd` PASS：岛屿/比赛切曲、快速连续切换、循环边界和原生输出正常，峰值分别约 0.083、0.116。语音使用独立音乐总线压低音量，保留原切曲渐变。
+- 无界面 `test_skills.gd`、`test_impacts.gd`、`test_items.gd`、`test_skill_input.gd`、`test_gacha_ui.gd` 和完整 `test_race.gd` 均 PASS。比赛种子 2026，53.50 秒满 24 人晋级、自动玩家第 9、27 名人机使用道具，与声音更新前一致。
+- 部分测试退出仍有 ObjectDB/resource 释放提示，最终原生声音专项为 12 个实例、6 项资源；未称日志完全无警告。没有验证其他平台/发行包，也未作多人最坏情况峰值及帧时间采样；台词音色、音量和节奏的主观认可仍待试玩。测试台词为通用模型合成，不是官方配音。

@@ -85,7 +85,7 @@ func collect(racer, pickup: Dictionary) -> bool:
 	if racer.is_player:
 		game.toast = '拾取 '+Catalog.title(racer.item_state.held)+' · 按 R 使用'
 		game.toast_time = 2.0
-		game.sound('checkpoint')
+		game.action_sound('pickup',racer)
 	return true
 
 func sync_held(racer) -> void:
@@ -127,7 +127,7 @@ func use_item(racer, direction := Vector3.ZERO) -> bool:
 	used[racer.racer_id] = used.get(racer.racer_id,0)+1
 	sync_held(racer)
 	if kind in ['boost','jetpack','clock']: burst(racer.global_position+Vector3.UP,Catalog.color(kind),1.8)
-	if racer.is_player: game.sound('roll')
+	game.action_sound('item',racer)
 	return true
 
 func throw_item(kind: String, racer, facing: Vector3) -> bool:

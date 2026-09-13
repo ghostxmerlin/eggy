@@ -28,6 +28,7 @@ var show_metrics := false
 var last_frame_ms := 0.0
 var audio: Dictionary = {}
 var music: Node
+var feedback: Node
 var mouse_forward := false
 var frame_times: Array[float] = []
 var frame_count := 0
@@ -99,6 +100,9 @@ func _ready() -> void:
 	music.name = 'BackgroundMusic'
 	add_child(music)
 	music.play_theme('island' if in_island else 'race')
+	feedback = preload('res://scripts/gameplay_audio.gd').new()
+	feedback.game = self
+	add_child(feedback)
 	create_confetti()
 	items = preload('res://scripts/race_items.gd').new()
 	items.game = self
@@ -204,6 +208,7 @@ func reset_racers() -> void:
 
 func start_race() -> void:
 	close_modals()
+	feedback.reset()
 	release_mouse_drive()
 	music.play_theme('race')
 	if in_island:
@@ -236,6 +241,7 @@ func replace_world(next_world: Node3D) -> void:
 
 func enter_island() -> void:
 	close_modals()
+	feedback.reset()
 	items.clear()
 	release_mouse_drive()
 	music.play_theme('island')
@@ -284,6 +290,7 @@ func _physics_process(delta: float) -> void:
 	if old_phase == 'countdown' and rules.phase == 'racing':
 		go_time = 1.0
 		sound('go')
+		feedback.race_start()
 	for racer in racers:
 		racer.active = rules.phase == 'racing'
 	if rules.phase == 'ended' and screen != 'result':
@@ -432,6 +439,9 @@ func ui_action(action: String) -> void:
 func sound(cue: String) -> void:
 	if audio.has(cue): audio[cue].play()
 
+func action_sound(cue: String, racer, strength := 1.0, reaction := false) -> void:
+	if is_instance_valid(feedback): feedback.event(cue,racer,strength,reaction)
+
 func checkpoint_reached(index: int) -> void:
 	sound('checkpoint')
 	toast = '检查点 %d 已点亮  ·  掉落后从这里继续' % index
@@ -451,6 +461,7 @@ func cross_finish(racer: CharacterBody3D) -> void:
 		finish_time = rules.elapsed
 		screen = 'result'
 		sound('finish')
+		feedback.finish()
 		confetti.position = player.position+Vector3(0,3,-1)
 		confetti.restart()
 		confetti.emitting = true

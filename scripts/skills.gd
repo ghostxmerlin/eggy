@@ -52,7 +52,7 @@ func use_skill(slot: int) -> bool:
 			racer.velocity.y = 4.2 if racer.is_on_floor() else maxf(racer.velocity.y,1.4)
 			racer.jump_buffer = 0
 			burst('dive', Color('#fff1a2'), 1.6, .45)
-			racer.game.sound('roll')
+			racer.game.action_sound('dive',racer)
 		3:
 			attack_left = .52
 			attack_pending = true
@@ -64,12 +64,12 @@ func use_skill(slot: int) -> bool:
 			for target in targets(6.0, deg_to_rad(65)):
 				target.skills.apply_freeze()
 			burst('ice', Color('#168bc9'), 6.0, .95)
-			racer.game.sound('checkpoint')
+			racer.game.action_sound('freeze',racer)
 		5:
 			for target in targets(6.0, PI):
 				target.skills.apply_fear(racer.global_position)
 			burst('fear', Color('#cb88ee'), 6.0, .7)
-			racer.game.sound('go')
+			racer.game.action_sound('fear',racer)
 	return true
 
 func targets(radius: float, half_angle: float) -> Array:
@@ -100,6 +100,7 @@ func cancel_action() -> void:
 	fish.hide()
 
 func apply_freeze() -> void:
+	if frozen_left <= 0: racer.game.action_sound('freeze',racer,1.0,true)
 	cancel_action()
 	frozen_left = FREEZE_SECONDS
 	fear_left = 0
@@ -110,6 +111,7 @@ func apply_freeze() -> void:
 	skull.hide()
 
 func apply_fear(origin: Vector3) -> void:
+	if fear_left <= 0: racer.game.action_sound('fear',racer,1.0,true)
 	cancel_action()
 	frozen_left = 0
 	fear_left = 2.0
@@ -130,6 +132,7 @@ func reset(clear_cooldowns := false) -> void:
 	effects.clear()
 
 func tick(delta: float) -> void:
+	if frozen_left > 0 and frozen_left <= delta: racer.game.action_sound('thaw',racer)
 	for i in range(remaining.size()): remaining[i] = maxf(0, remaining[i]-delta)
 	frozen_left = maxf(0,frozen_left-delta)
 	fear_left = maxf(0,fear_left-delta)
@@ -140,7 +143,7 @@ func tick(delta: float) -> void:
 	if attack_pending and attack_left <= .42:
 		attack_pending = false
 		burst('hit', Color('#ffda76'), 2.5, .24)
-		racer.game.sound('roll')
+		racer.game.action_sound('swing',racer)
 	if attack_left > 0:
 		var old_phase := clampf((.52-previous_attack-.10)/.28,0,1)
 		var phase := clampf((.52-attack_left-.10)/.28,0,1)
@@ -175,6 +178,7 @@ func pose_fish(phase: float) -> void:
 
 func receive_impulse(impulse: Vector3, duration: float) -> void:
 	if frozen_left > 0: return
+	if impulse.length() >= 4.0: racer.game.action_sound('knockdown' if impulse.length() >= 8.0 else 'bump',racer)
 	# Keep the vertical component in normal gravity integration, never reset it every frame.
 	racer.velocity += impulse / maxf(.1,racer.body_mass)
 	knockback = Vector3(racer.velocity.x,0,racer.velocity.z)
@@ -203,6 +207,7 @@ func resolve_dive_collisions(incoming: Vector3) -> void:
 		var closing := maxf(0,(incoming-target_velocity).dot(normal))
 		if closing < .5: continue
 		dive_hits[target.get_instance_id()] = true
+		racer.game.action_sound('hit',racer)
 		# Equal masses share the closing momentum; heavy props move less and slow us more.
 		var impulse: Vector3 = normal * (1.25*closing/(1.0/racer.body_mass+1.0/maxf(.1,mass)))
 		if target is RigidBody3D: target.apply_impulse(impulse,collision.get_position()-target.global_position)
@@ -233,6 +238,7 @@ func sweep_contacts(from_phase: float, to_phase: float) -> void:
 			var query := PhysicsRayQueryParameters3D.create(origin,center,5)
 			if not racer.get_world_3d().direct_space_state.intersect_ray(query).is_empty(): continue
 			swing_hits[target.get_instance_id()] = true
+			racer.game.action_sound('hit',racer)
 			var normal := contact.normalized() if contact.length_squared() > .001 else radial
 			var tangent := Vector3.UP.cross(radial)
 			var airborne: bool = not target.is_on_floor()
