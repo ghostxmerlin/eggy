@@ -6,6 +6,8 @@
 
 2026-09-13 后续更新：用户要求恢复巅峰赛多人参与。岛上“参赛”、Enter 和暂停菜单参赛现进入 1 名玩家 + 31 名人机比赛；默认启动仍在岛上，`--practice` 保留单人练习。新机验证见 `docs/verification.md` 的“恢复 32 人巅峰赛”。
 
+同日道具更新：巅峰赛有十二种随机道具，玩家和 AI 从问号箱拾取，一次携带一个，R 使用，原 R 复位改为 T；详见 `docs/items.md`。道具模型由 `item_visuals.gd` 程序生成。字体已包含新中文；本机 Python 3.9.6 使用 fonttools 4.59.2 重建字体，运行游戏仍不需要 Python。
+
 ## 1. 新会话先做什么
 
 请先完整阅读本文，再看 [README.md](README.md)、[验证记录](docs/verification.md) 和 [资产来源](docs/ASSETS.md)。`startup.md` 是普通仓库文档，不要假定每个 Codex 会话都会自动读取；新会话可直接告知：“先阅读根目录 startup.md，然后在 dev 继续开发。”
@@ -143,7 +145,8 @@ BLENDER_BIN="/Applications/Blender.app/Contents/MacOS/Blender"
 | 鼠标右键拖动 | 看向其他方向 |
 | 鼠标左右键同时按 | 沿镜头方向前进，松开任一键停止鼠标驱动 |
 | B / 衣柜按钮 | 岛上换装，独立预览，确认才保存 |
-| R | 岛上回广场；比赛回检查点；乘机中可退出回广场 |
+| R | 使用随机拾取的道具，右键转动镜头调整投掷方向 |
+| T | 岛上回广场；比赛回检查点；乘机中可退出回广场 |
 | Esc / Enter | 暂停/继续；参赛或重试，具体按当前界面；衣柜 Esc 取消，Enter 操作焦点按钮 |
 | F3 / F12 | 性能面板 / 截图 |
 
@@ -210,7 +213,8 @@ mkdir -p captures
 | 飞机 | `test_plane_access.gd`、`test_plane.gd`（建议帧上限 5000） |
 | 音乐 | `test_music.gd`，另需实际听循环与场景切换 |
 | 角色/皮肤/衣柜 | `test_skins.gd`、`test_wardrobe.gd`、原生 `wardrobe_preview.gd` |
-| 完整 AI 比赛 | `test_race.gd`，帧上限至少 12000；从岛屿参赛入口创建 32 人比赛 |
+| 道具 | `test_items.gd`（至少 5000 帧），检查实际弹道、击飞、传送、部署、增益、AI、R/T 与清理 |
+| 完整 AI 比赛 | `test_race.gd`，帧上限至少 12000；从岛屿参赛入口创建 32 人道具赛，并检查 AI 拾取和使用 |
 
 完整单人路线测试也应给至少 12000 帧。`test_race.gd` 加 `-- --visual` 可在原生窗口生成倒计时、比赛中和结算截图。`test_plane.gd` 自行使用 4 倍时间和 240 Hz 物理加速逻辑测试，不能用其耗时评价渲染性能。
 

@@ -10,6 +10,7 @@ var pointer := Vector2.ZERO
 const INK := Color('#24455b')
 const TEAL := Color('#167f86')
 const WHITE := Color('#fffdf3')
+const Items = preload('res://scripts/item_catalog.gd')
 
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -54,6 +55,7 @@ func _draw() -> void:
 	var scale_factor := size/Vector2(1440,900)
 	draw_set_transform(Vector2.ZERO,0,scale_factor)
 	buttons.clear()
+	if not game.in_island: draw_item_obstruction()
 	var menu: bool = game.screen == 'menu'
 	if game.screen == 'island':
 		draw_island()
@@ -107,7 +109,7 @@ func _draw() -> void:
 				draw_circle(Vector2(507+424*ratio,725),4,Color('#fff0b5'))
 			txt('风车 / 门廊       高空窄桥       连续断桥',Vector2(552,754),15,INK)
 			txt('W/S 前后 · Q/E 平移 · A/D 转向',Vector2(34,822),16,INK)
-			txt('空格 跳跃  /  R 回到检查点',Vector2(34,846),17,INK)
+			txt('空格 跳跃 / R 道具 / T 回检查点',Vector2(34,846),17,INK)
 			txt('Esc 暂停',Vector2(35,874),15,INK)
 		if game.rules.phase == 'countdown':
 			draw_rect(Rect2(0,0,1440,900),Color(.13,.27,.35,.10))
@@ -145,6 +147,7 @@ func _draw() -> void:
 			button('restart',Rect2(530,464,182,58),'重新出发',false)
 			button('island',Rect2(728,464,182,58),'返回岛屿',false)
 		centered('Esc 继续  ·  右键拖动调整视角',720,598,17,INK)
+	if game.items and game.items.enabled and game.screen == 'racing' and not game.paused: draw_item_slot()
 	if game.show_metrics and not menu:
 		panel(Rect2(34,184,280,96),Color(.09,.18,.24,.86),12)
 		txt('%d FPS   /   %.2f ms' % [Engine.get_frames_per_second(),game.last_frame_ms],Vector2(48,217),20,WHITE,true)
@@ -175,7 +178,37 @@ func draw_island() -> void:
 	txt('云端冲冲赛',Vector2(1087,757),23,INK,true)
 	txt('第一关 · 32 位选手 · 前 24 名晋级',Vector2(1087,782),16,TEAL)
 	button('join',Rect2(1085,799,300,53),'参赛')
-	txt('Esc 休息一下  /  R 回到广场',Vector2(37,893),14,INK)
+	txt('Esc 休息一下  /  T 回到广场',Vector2(37,893),14,INK)
+
+func draw_item_slot() -> void:
+	var id: String = game.player.item_state.held
+	var color := Items.color(id)
+	panel(Rect2(1050,694,356,176),WHITE,24,true)
+	panel(Rect2(1066,709,44,36),color,10)
+	centered('R',1088,735,23,WHITE,true)
+	txt(Items.title(id),Vector2(1124,738),25,INK,true)
+	txt(Items.description(id),Vector2(1067,775),16,TEAL)
+	txt('按 R 使用 · 右键转动镜头瞄准',Vector2(1067,809),16,INK)
+	txt('一次携带一个 · 问号箱会重新出现',Vector2(1067,844),15,TEAL)
+	var state = game.player.item_state
+	if state.boost > 0 or state.jetpack > 0:
+		var label := '加速 %.1f 秒' % state.boost if state.boost > 0 else '喷气 %.1f 秒' % state.jetpack
+		panel(Rect2(1090,628,276,45),Color('#edbb37'),16)
+		centered(label,1228,658,21,INK,true)
+
+func draw_item_obstruction() -> void:
+	var state = game.player.item_state
+	if state.ink > 0:
+		var alpha: float = minf(1.0,state.ink)*.80
+		for entry in [[430,330,125],[1020,375,150],[770,220,90],[590,570,115],[1130,200,60]]:
+			draw_circle(Vector2(entry[0],entry[1]),entry[2],Color(.12,.06,.18,alpha))
+		for i in range(9):
+			draw_circle(Vector2(320+i*94,460+sin(i*2.1)*150),20+i%3*8,Color(.15,.08,.22,alpha))
+		panel(Rect2(550,184,340,42),Color('#563867'),16)
+		centered('墨汁干扰 %.1f 秒' % state.ink,720,213,23,WHITE,true)
+	if state.smoke > 0:
+		draw_rect(Rect2(0,0,1440,690),Color(.68,.75,.81,.48))
+		centered('云雾遮挡',720,255,23,INK,true)
 
 func _gui_input(event: InputEvent) -> void:
 	var factor := size/Vector2(1440,900)

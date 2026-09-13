@@ -43,6 +43,8 @@ var confetti: GPUParticles3D
 @export var skin_save_path := 'user://appearance.cfg'
 var skin_store: RefCounted
 var wardrobe: Control
+var items: Node3D
+@export var item_seed := -1
 
 func _ready() -> void:
 	var args := OS.get_cmdline_user_args()
@@ -90,6 +92,9 @@ func _ready() -> void:
 	add_child(music)
 	music.play_theme('island' if in_island else 'race')
 	create_confetti()
+	items = preload('res://scripts/race_items.gd').new()
+	items.game = self
+	add_child(items)
 	autoplay = '--autoplay' in args
 	capture_run = '--capture' in args
 	profile_run = '--profile' in args
@@ -211,6 +216,7 @@ func start_race() -> void:
 	result_age = 0
 	frame_times.clear()
 	reset_racers()
+	items.setup_race()
 	if autoplay: player.external_control = true
 	confetti.emitting = false
 
@@ -222,6 +228,7 @@ func replace_world(next_world: Node3D) -> void:
 
 func enter_island() -> void:
 	if wardrobe: wardrobe.close()
+	items.clear()
 	release_mouse_drive()
 	music.play_theme('island')
 	paused = false
@@ -363,6 +370,8 @@ func _input(event: InputEvent) -> void:
 				if screen == 'result': enter_island()
 				elif screen in ['racing','island']: toggle_pause()
 			KEY_R:
+				items.use_item(player)
+			KEY_T:
 				if screen in ['racing','island'] and not paused: player.respawn()
 			KEY_B: wardrobe.open()
 			KEY_F3: show_metrics = not show_metrics
@@ -405,6 +414,7 @@ func cross_finish(racer: CharacterBody3D) -> void:
 	var place: int = rules.finish(racer.racer_id)
 	if place == 0: return
 	racer.finished = true
+	racer.clear_item()
 	racer.collision_layer = 0
 	racer.velocity *= .2
 	print('FINISH id=',racer.racer_id,' place=',place,' time=',snappedf(rules.elapsed,.01))

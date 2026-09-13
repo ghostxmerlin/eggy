@@ -82,3 +82,19 @@ Apple M4 Pro，Godot 4.7.2 Metal Forward+，1440×900；单独运行一个游戏
 ```sh
 .tools/Godot.app/Contents/MacOS/Godot --path . --quit-after 12000 --log-file captures/multiplayer-full-native.log --script tests/test_race.gd -- --visual
 ```
+
+## 2026-09-13：巅峰赛随机道具
+
+- 加入十二种道具及其自制 3D 外观，十排平台共 44 个问号箱。碰触随机拾取、一次携带一个、R 使用，原复位键改为 T。人机遵循相同拾取和消耗规则，按附近目标投掷攻击道具。具体行为与数值见 [道具说明](items.md)。
+- `test_items.gd` 通过：真实接触拾取、满槽不覆盖、重复拾取限制、四秒刷新、十二种抽取覆盖、R 使用／长按不连发、T 回检查点、受控禁止使用、真实弹球击出边界与复位、墨汁及爆炸命中、烟雾范围、跨断口传送、墙面与无效落点、绳索拉动两人、弹板弹飞、一次性地雷、实体箱站立、加速／喷气／秒表、AI 使用、暂停和重开回岛清理。
+- 原生 `items_preview.gd` 通过，并逐张检查六张实际截图：`items-picked-ball.png`、`items-ball-knockout.png`、`items-portals.png`、`items-ink-hit.png`、`items-springboard.png`、`items-jetpack.png`，均在 `captures/`。预览使用隔离的两名选手布置，调用真实拾取、R 输入、弹道和物理效果；完整 32 人流程另行验证。
+- 首次原生完整道具赛（固定道具种子 2026）：30 名人机拾取并使用道具，玩家使用一次；玩家 48.25 秒获第 2 名，108.42 秒满 24 名晋级。记录到墨汁命中 15 次、炸弹 13 次、地雷 20 次、弹球 16 次、绳索 8 次，传送 33 次、弹板触发 48 次。日志 `captures/items-full-native.log`。这些结果包含道具实际生效后的比赛进程，不是关闭道具的 AI 跑关。
+- 加入近墙投掷检查后的最终原生全场复测通过：30 名人机拾取并使用，玩家使用三次；玩家 41.55 秒获第 1 名，113.43 秒满 24 名晋级。墨汁／炸弹各命中 16 次、地雷 27 次、弹球 34 次、绳索 7 次，传送 17 次、弹板触发 83 次；结算截图确认 24 / 24。日志 `captures/items-race-final.log`，退出码 0。
+- `test_world.gd`、`test_solo.gd -- --practice`、`test_wardrobe.gd`、`test_impacts.gd` 回归通过；单人练习、既有技能、皮肤与衣柜继续工作。日志为 `captures/items-*-final.log`；专项为 `captures/test-items-final.log`。
+- Godot 4.7.2、Apple M4、Metal Forward+、1440×900。部分测试退出仍出现 ObjectDB/resource 释放提示，已与断言及脚本错误分开记录；没有把这些日志称为全绿。未测全程帧时间分布，随机局的名次与用时不保证一致。
+
+```sh
+.tools/Godot.app/Contents/MacOS/Godot --headless --path . --quit-after 5000 --script tests/test_items.gd
+.tools/Godot.app/Contents/MacOS/Godot --path . --quit-after 5000 --script tests/items_preview.gd
+.tools/Godot.app/Contents/MacOS/Godot --path . --quit-after 12000 --script tests/test_race.gd -- --visual
+```

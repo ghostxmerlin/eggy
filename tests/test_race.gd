@@ -3,6 +3,7 @@ func _initialize() -> void:
 	call_deferred('run')
 func run() -> void:
 	var game = load('res://main.tscn').instantiate()
+	game.item_seed = 2026
 	root.add_child(game)
 	await process_frame
 	var visual := '--visual' in OS.get_cmdline_user_args()
@@ -23,6 +24,10 @@ func run() -> void:
 		if visual and frame == 360: await capture(game,'race-32-running')
 		if game.rules.phase == 'ended': break
 	var ok: bool = game.rules.order.size() == 24 and game.player_place>0 and game.rules.elapsed < game.rules.TIME_LIMIT
+	var ai_collectors: int = game.items.collected.keys().filter(func(id): return id != 0).size()
+	var ai_users: int = game.items.used.keys().filter(func(id): return id != 0).size()
+	ok = ok and ai_collectors >= 20 and ai_users >= 20 and game.items.used.get(0,0) > 0
+	print('RACE ITEMS: AI collectors=',ai_collectors,' AI users=',ai_users,' player uses=',game.items.used.get(0,0),' hits=',game.items.hits,' portals=',game.items.portal_trips,' springs=',game.items.spring_launches)
 	print('FULL RACE: ', 'PASS' if ok else 'FAIL', ' finishers=',game.rules.order.size(),' player=',game.player_place,' time=',game.rules.elapsed)
 	if visual: await capture(game,'race-32-result')
 	if not ok:

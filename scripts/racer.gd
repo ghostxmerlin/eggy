@@ -37,6 +37,10 @@ var training_dummy := false
 var training_home := Vector3.ZERO
 var training_jump := false
 var training_jump_clock := 1.2
+var item_state = preload('res://scripts/item_state.gd').new()
+var item_display: Node3D
+var jet_display: Node3D
+var item_ink_visible := false
 @export_range(.1,100,.1) var body_mass := 1.0
 
 func _ready() -> void:
@@ -126,6 +130,7 @@ func leave_vehicle() -> void:
 
 func reset_to_start(pos: Vector3) -> void:
 	leave_vehicle()
+	clear_item()
 	if skills: skills.reset(true)
 	position = pos
 	velocity = Vector3.ZERO
@@ -150,6 +155,7 @@ func reset_to_start(pos: Vector3) -> void:
 
 func respawn() -> void:
 	leave_vehicle()
+	clear_item()
 	skills.reset()
 	position = training_home if training_dummy else (game.Island.SPAWN if game.in_island else game.course.CHECKPOINTS[checkpoint] + Vector3(lane*.25 if not is_player else 0, .3, 0))
 	velocity = Vector3.ZERO
@@ -165,8 +171,31 @@ func respawn() -> void:
 	reset_physics_interpolation()
 	if is_player: game.sound('fall')
 
+func clear_item() -> void:
+	item_state.clear()
+	if is_instance_valid(item_display): item_display.queue_free()
+	item_display = null
+	update_item_visuals()
+
+func update_item_visuals() -> void:
+	if not is_instance_valid(model): return
+	var inked: bool = item_state.ink > 0
+	if inked != item_ink_visible:
+		item_ink_visible = inked
+		var overlay: Material = preload('res://scripts/item_visuals.gd').material(Color(.14,.06,.20,.82)) if inked else null
+		for mesh in model.find_children('*','MeshInstance3D',true,false): mesh.material_overlay = overlay
+	if item_state.jetpack > 0 and not is_instance_valid(jet_display):
+		jet_display = preload('res://scripts/item_visuals.gd').item('jetpack')
+		pivot.add_child(jet_display)
+		jet_display.position = Vector3(0,.2,-.65)
+		jet_display.scale = Vector3.ONE*.7
+	elif item_state.jetpack <= 0 and is_instance_valid(jet_display):
+		jet_display.queue_free()
+		jet_display = null
+
 func _physics_process(delta: float) -> void:
 	if game.paused: return
+	update_item_visuals()
 	skills.tick(delta)
 	roll_cooldown = maxf(0,roll_cooldown-delta)
 	roll_left = maxf(0,roll_left-delta)
@@ -199,7 +228,7 @@ func _physics_process(delta: float) -> void:
 				if training_jump_clock <= 0 and is_on_floor():
 					request_jump()
 					training_jump_clock = 3.0
-		elif not is_player:
+		elif not is_player and not external_control:
 			var target: Vector3 = game.course.ai_target(position,lane,racer_id)
 			var delta_pos := (target-position)
 			drive = Vector2(delta_pos.x,delta_pos.z).normalized()
@@ -215,6 +244,7 @@ func _physics_process(delta: float) -> void:
 	var speed := SPEED if is_player else ai_speed
 	if training_dummy: speed = 2.5
 	if roll_left>0: speed = 14.0
+	speed *= item_state.speed_scale()
 	if skills.dive_left > 0: speed = skills.dive_speed
 	if skills.fear_left > 0: speed = 5.0
 	if direction.length_squared()>0.01 or (is_player and active):
@@ -244,6 +274,8 @@ func _physics_process(delta: float) -> void:
 		velocity.x = 0
 		velocity.z = 0
 	if not is_on_floor(): velocity.y -= GRAVITY*delta
+	if item_state.jetpack > 0 and active and not finished and not skills.controlled():
+		velocity.y = move_toward(velocity.y,6.0,38.0*delta)
 	if jump_buffer>0 and coyote>0:
 		velocity.y = JUMP_SPEED
 		jump_buffer = 0

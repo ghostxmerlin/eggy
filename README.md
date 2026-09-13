@@ -20,9 +20,11 @@ Godot 4.7.2 + GDScript 的 Q 版 3D 单机派对游戏。默认从蛋仔岛开�
 
 启动后可在浮岛广场自由移动、跳跃和滚动。中央是“宜之有之派对”灯柱广告牌，扩大后的岛上有摩天轮、环岛小飞机、喷泉、可承载玩家的升降观景台，以及巨型蛋仔。右下角“参赛”进入第一关；比赛暂停和结算界面提供“返回岛屿”。
 
-小飞机停在岛右侧升降台旁的高平台。乘升降台到顶后向右走，沿坡道进入机舱；靠近会打开灰色舱盖，站稳后自动关盖、起飞，约半分钟绕岛返回。飞机停稳并开盖后恢复行走，沿原坡道下机；留在舱内不会马上再飞。飞行时可右键看风景、Esc 暂停，R 可回广场。
+小飞机停在岛右侧升降台旁的高平台。乘升降台到顶后向右走，沿坡道进入机舱；靠近会打开灰色舱盖，站稳后自动关盖、起飞，约半分钟绕岛返回。飞机停稳并开盖后恢复行走，沿原坡道下机；留在舱内不会马上再飞。飞行时可右键看风景、Esc 暂停，T 可回广场。
 
-岛上点击“参赛”、按 Enter，或在暂停菜单参赛，进入 1 名玩家 + 31 名人机的巅峰赛。3 秒倒计时后出发，前 24 名晋级，限时 150 秒。重开保留 32 名选手；返回岛屿会移除比赛人机，再次参赛重新组队。岛上 R 回到广场，比赛中 R 返回检查点，Esc 暂停。
+岛上点击“参赛”、按 Enter，或在暂停菜单参赛，进入 1 名玩家 + 31 名人机的巅峰赛。3 秒倒计时后出发，前 24 名晋级，限时 150 秒。重开保留 32 名选手；返回岛屿会移除比赛人机，再次参赛重新组队。岛上 T 回到广场，比赛中 T 返回检查点，Esc 暂停。
+
+巅峰赛加入十二种随机道具：传送球、墨汁炸弹、弹球、弹板、炸弹、地雷、云雾弹、加速、垫脚箱、弹簧绳、喷气背包、冷却秒表。碰触赛道问号箱拾取，**按 R 使用**，右键转动镜头调整投掷方向；一次携带一个，人机也会拾取和使用。详见 [道具规则与效果](docs/items.md)。
 
 岛屿出生点左前方有「技能练习区」，三只练习蛋仔可被击退、冻结或恐惧，受控结束后会返回原位；第三只会间歇跳跃，旁边两个方块与角色质量相同，可用飞扑撞开。练习目标只出现在岛上，不参与单人比赛。技能也能作用于原有 32 人比赛的其他选手。
 
@@ -57,7 +59,8 @@ macOS 也可以在项目目录运行 `./play.command`：启动脚本优先使用
 | 5 | 破胆怒吼；周围 6 单位范围失控乱跑 2 秒，目标头顶显示骷髅，冷却 15 秒 |
 | 鼠标右键拖动 | 调整镜头 |
 | 鼠标左右键同时按住 | 沿镜头朝向前进，移动鼠标转向；松开任一键停止鼠标驱动的前进 |
-| R | 回到最近检查点 |
+| R | 使用拾取的道具 |
+| T | 回到最近检查点；岛上回广场 |
 | Esc | 暂停 / 继续；结算页返回首页 |
 | Enter | 岛上参赛 / 再跑一局 |
 | B | 岛上打开衣柜 |
@@ -102,6 +105,7 @@ macOS 也可以在项目目录运行 `./play.command`：启动脚本优先使用
 .tools/Godot.app/Contents/MacOS/Godot --headless --path . --fixed-fps 60 --script tests/test_island.gd
 .tools/Godot.app/Contents/MacOS/Godot --headless --path . --script tests/test_rules.gd
 .tools/Godot.app/Contents/MacOS/Godot --headless --path . --script tests/test_world.gd
+.tools/Godot.app/Contents/MacOS/Godot --headless --path . --quit-after 5000 --script tests/test_items.gd
 .tools/Godot.app/Contents/MacOS/Godot --headless --path . --script tests/test_skins.gd
 .tools/Godot.app/Contents/MacOS/Godot --headless --path . --script tests/test_wardrobe.gd
 .tools/Godot.app/Contents/MacOS/Godot --headless --path . --fixed-fps 60 --script tests/test_solo.gd
