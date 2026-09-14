@@ -15,7 +15,7 @@ const SKINS := [
 	{'id': 'rover', 'name': '履带探险家', 'note': '雷达天线与装甲背包，探索未知。', 'shell': '#86aba0', 'face': '#ffdbac', 'shoe': '#eef3f6', 'sole': '#425770', 'accent': '#f3c861', 'accessory': 'rover', 'rarity': '稀有', 'group': 'season'},
 	{'id': 'mecha_gale', 'name': '断罪骑士·岚', 'note': '碧蓝轻甲、侧翼与双推进器。', 'shell': '#3daee2', 'face': '#ffdbac', 'shoe': '#eef3f6', 'sole': '#425770', 'accent': '#68eaff', 'accessory': 'gale', 'rarity': '典藏', 'group': 'season'},
 	{'id': 'mecha_blaze', 'name': '断罪骑士·烈', 'note': '紫色重甲、厚肩盾与能量核心。', 'shell': '#8b67c7', 'face': '#ffdbac', 'shoe': '#eef3f6', 'sole': '#425770', 'accent': '#e28bff', 'accessory': 'blaze', 'rarity': '典藏', 'group': 'season'},
-	{'id': 'mecha', 'name': '断罪骑士·极', 'note': '银白棱甲、锐利蓝眸与背部推进器。', 'shell': '#e2ecf2', 'face': '#ffdbac', 'shoe': '#eef3f6', 'sole': '#425770', 'accent': '#5ce6ff', 'accessory': 'knight', 'rarity': '至臻', 'group': 'season'},
+	{'id': 'mecha', 'name': '断罪骑士·极', 'note': '黄金装甲、金色能量眼与背部推进器。', 'shell': '#ffbd38', 'face': '#ffdbac', 'shoe': '#eef3f6', 'sole': '#425770', 'accent': '#ffe69a', 'accessory': 'knight', 'rarity': '至臻', 'group': 'season'},
 ]
 
 static func has_skin(id: String) -> bool:

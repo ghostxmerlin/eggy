@@ -4,16 +4,16 @@ const S = preload('res://scripts/outfit_models.gd')
 static func build(model: Node3D, root: Node3D, skin: Dictionary) -> void:
 	var kind: String = skin.accessory
 	var white := S.mat(Color(skin.shell))
-	white.roughness = .24
-	white.metallic = .72
-	var edge := S.mat(Color('#bec9df') if kind == 'knight' else Color(skin.shell).lightened(.36))
-	var silver := S.mat(Color('#f2f5ff'))
-	var dark := S.mat(Color('#16283e'))
-	var rubber := S.mat(Color('#26334b'))
+	white.roughness = .22 if kind == 'knight' else .24
+	white.metallic = .62 if kind == 'knight' else .72
+	var edge := S.mat(Color('#b77518') if kind == 'knight' else Color(skin.shell).lightened(.36))
+	var silver := S.mat(Color('#ffe29a') if kind == 'knight' else Color('#f2f5ff'))
+	var dark := S.mat(Color('#241d19') if kind == 'knight' else Color('#16283e'))
+	var rubber := S.mat(Color('#382f26') if kind == 'knight' else Color('#26334b'))
 	rubber.metallic = .08
 	rubber.roughness = .65
-	var blue := S.mat(Color('#08b9f6') if kind == 'knight' else Color('#6ae7ff') if kind == 'gale' else Color('#c66dff'),true)
-	blue.emission_energy_multiplier = 1.15
+	var blue := S.mat(Color(skin.accent) if kind == 'knight' else Color('#6ae7ff') if kind == 'gale' else Color('#c66dff'),true)
+	blue.emission_energy_multiplier = .85 if kind == 'knight' else 1.15
 	model.find_child('Body',true,false).layers = 0
 	# A closed continuous shell supports the front panels and carries the backpack.
 	S.ball(root,Vector3(0,1.02,-.035),Vector3(.625,.645,.50),white)
