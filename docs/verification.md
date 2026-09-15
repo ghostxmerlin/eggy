@@ -176,3 +176,10 @@ Apple M4 Pro，Godot 4.7.2 Metal Forward+，1440×900；单独运行一个游戏
 - 资源导入和 `git diff --check` 通过。部分无界面退出仍有既有 ObjectDB/resource 提示；最终原生专项无脚本/渲染错误。未测本轮帧时间基准、其他平台或发行包；力量感与手感仍需实际试玩反馈。
 
 原生专项：`.tools/Godot.app/Contents/MacOS/Godot --path . --always-on-top --max-fps 60 --quit-after 3600 --script tests/test_swing_visual.gd -- --visual`。
+
+## 2026-09-15：巅峰赛随机起跑位
+
+- 移除玩家独占 `(0,.08,11)` 后排的例外，32 人比赛按 Fisher–Yates 随机分配四排八列起跑位；玩家和人机使用同一分配规则。每次重开重新分配，选手数组、ID 与外观不变，仍在三秒倒计时后一起出发。岛屿和单人练习的出生位置沿用原值。起跑使用独立 RNG，`start_seed` 仅用于复现实测。
+- `test_start_grid.gd` 无界面和原生 PASS：96 次固定种子分配中玩家覆盖 28 个位置、全部四排，每次 32 个合法位置不重复；验证同种子可重现、选手身份/倒计时复位、道具 RNG 不受消耗、重开重新分配、回岛与单人练习。原生 Godot 4.7.2 / Apple M4 / Metal Forward+ / 1440×900，核对 `captures/random-start-row-1.png` 至 `random-start-row-4.png`，日志 `captures/start-grid-native.log`。
+- 完整 `test_race.gd` PASS：起跑与道具种子均 2026，54.48 秒满 24 人晋级、自动玩家第 1、29 名人机使用道具。这是该随机站位样本，不保证玩家总是前排或获胜。完整赛测试现在固定独立起跑种子以便复现。
+- 资源导入与 `git diff --check` 通过；专项原生退出仍有 8 ObjectDB / 4 resources 的既有提示，完整赛为 4 / 2。未做新的帧时间基准或跨平台验证。

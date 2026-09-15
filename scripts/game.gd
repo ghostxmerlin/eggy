@@ -48,8 +48,12 @@ var gacha: Control
 var coin_console: Control
 var items: Node3D
 @export var item_seed := -1
+@export var start_seed := -1
+var start_rng := RandomNumberGenerator.new()
 
 func _ready() -> void:
+	if start_seed >= 0: start_rng.seed = start_seed
+	else: start_rng.randomize()
 	var args := OS.get_cmdline_user_args()
 	practice = practice and not '--race' in args
 	get_window().title = '宜之有之派对'
@@ -201,9 +205,18 @@ func join_race() -> void:
 	start_race()
 
 func reset_racers() -> void:
+	var slots := range(racers.size())
+	# Shuffle slot assignment, not racer identity or the item/gacha random streams.
+	if not practice:
+		for i in range(slots.size()-1,0,-1):
+			var j := start_rng.randi_range(0,i)
+			var old: int = slots[i]
+			slots[i] = slots[j]
+			slots[j] = old
 	for i in range(racers.size()):
-		var p := Vector3((i%8-3.5)*2.15,.08,2+floorf(i/8.0)*2.3)
-		if i==0: p = Vector3(0,.08,11)
+		var slot: int = slots[i]
+		var p := Vector3((slot%8-3.5)*2.15,.08,2+floorf(slot/8.0)*2.3)
+		if practice: p = Vector3(0,.08,11)
 		racers[i].reset_to_start(p)
 
 func start_race() -> void:

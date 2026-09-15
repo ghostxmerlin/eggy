@@ -6,6 +6,7 @@ func run() -> void:
 	game.item_seed = 2026
 	for argument in OS.get_cmdline_user_args():
 		if argument.begins_with('--seed='): game.item_seed = int(argument.trim_prefix('--seed='))
+	game.start_seed = game.item_seed
 	root.add_child(game)
 	await process_frame
 	var visual := '--visual' in OS.get_cmdline_user_args()
