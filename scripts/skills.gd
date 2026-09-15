@@ -43,6 +43,7 @@ func forward() -> Vector3:
 	return Vector3(0,0,-1).rotated(Vector3.UP,racer.game.camera_yaw) if racer.is_player else Vector3(sin(racer.pivot.rotation.y),0,cos(racer.pivot.rotation.y))
 
 func use_skill(slot: int) -> bool:
+	if racer.game.light_race() and slot not in [1,2]: return false
 	if career and career.enabled(): return career.use(slot)
 	if racer.game.duel and racer.game.duel.in_arena() and slot in [1,2]: return false
 	if is_instance_valid(racer.vehicle): return false

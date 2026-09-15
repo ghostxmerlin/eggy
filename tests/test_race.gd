@@ -14,9 +14,6 @@ func run() -> void:
 	var visual := '--visual' in OS.get_cmdline_user_args()
 	if visual: await capture(game,'race-32-island-entry')
 	game.ui_action('join')
-	if game.screen == 'career':
-		game.class_room.choose(0)
-		game.class_room.confirm()
 	if game.racers.size() != 32 or game.practice:
 		print('FULL RACE: FAIL island entry did not create 32-player competition')
 		game.queue_free()
@@ -31,13 +28,13 @@ func run() -> void:
 		await physics_frame
 		if visual and frame == 360: await capture(game,'race-32-running')
 		if game.rules.phase == 'ended': break
-	var ok: bool = game.rules.order.size() == 24 and game.rules.phase == 'ended' and game.rules.elapsed < game.rules.TIME_LIMIT
+	var ok: bool = game.rules.order.size() > 0 and game.rules.order.size() <= 24 and game.rules.phase == 'ended' and game.rules.elapsed < game.rules.TIME_LIMIT
 	# Competitive opponents may eliminate the autoplay player; qualification is earned.
 	ok = ok and game.player.finished == (game.player_place > 0)
-	var ai_collectors: int = game.items.collected.keys().filter(func(id): return id != 0).size()
-	var ai_users: int = game.items.used.keys().filter(func(id): return id != 0).size()
-	ok = ok and ai_collectors >= 20 and ai_users >= 20
-	print('RACE ITEMS: AI collectors=',ai_collectors,' AI users=',ai_users,' player uses=',game.items.used.get(0,0),' hits=',game.items.hits,' portals=',game.items.portal_trips,' springs=',game.items.spring_launches)
+	ok = ok and not game.items.enabled and game.items.pickups.is_empty()
+	ok = ok and game.rules.first_finish >= 0 and game.rules.elapsed <= game.rules.deadline()
+	ok = ok and (game.rules.order.size() == 24 or game.rules.end_reason == 'finish_window')
+	for actor in game.racers: ok = ok and not actor.skills.career.enabled()
 	print('FULL RACE: ', 'PASS' if ok else 'FAIL', ' finishers=',game.rules.order.size(),' player=',game.player_place,' time=',game.rules.elapsed,' seed=',game.item_seed)
 	if visual: await capture(game,'race-32-result')
 	if not ok:

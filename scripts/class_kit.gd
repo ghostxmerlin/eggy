@@ -23,7 +23,7 @@ func _ready():
 	racer = base.racer
 	fx = preload('res://scripts/class_effects.gd').new()
 	add_child(fx)
-func enabled() -> bool: return class_id in Catalog.IDS
+func enabled() -> bool: return class_id in Catalog.IDS and not racer.game.light_race()
 func configure(id: String, choices := [0,0,0]):
 	reset()
 	class_id = id if id in Catalog.IDS else ''
@@ -53,6 +53,7 @@ func targets(radius: float, cone := PI) -> Array:
 	result.sort_custom(func(a,b): return racer.position.distance_squared_to(a.position) < racer.position.distance_squared_to(b.position))
 	return result
 func use(slot: int) -> bool:
+	if not enabled(): return false
 	if slot < 1 or slot > 5 or racer.game.paused or not racer.active or racer.finished or is_instance_valid(racer.vehicle): return false
 	var data: Array = Catalog.skill(class_id,slot)
 	var id: String = data[0]

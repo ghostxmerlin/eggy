@@ -37,7 +37,7 @@ func clear() -> void:
 	for racer in game.racers:
 		if is_instance_valid(racer): racer.clear_item()
 
-func setup_race() -> void:
+func setup_race(with_items := true) -> void:
 	clear()
 	collected.clear()
 	used.clear()
@@ -45,7 +45,7 @@ func setup_race() -> void:
 	portal_trips = 0
 	spring_launches = 0
 	clock = 0
-	enabled = not game.practice and not game.in_island
+	enabled = with_items and not game.practice and not game.in_island
 	if not enabled: return
 	# Wide platforms and checkpoint approaches, never unsupported gaps.
 	for z in [-8.0,-17.0,-51.0,-89.0,-101.0,-135.0,-201.0,-216.0,-264.0,-294.0]:

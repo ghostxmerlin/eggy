@@ -219,7 +219,7 @@ func run():
 		AudioServer.remove_bus_effect(0,AudioServer.get_bus_effect_count(0)-1)
 	game.join_race()
 	check(game.racers.size() == 32 and game.player.skills.career.class_id == 'hunter','Same profession follows player into race')
-	for actor in game.racers: check(actor.skills.career.enabled(),'Race bot has profession')
+	for actor in game.racers: check(not actor.skills.career.enabled(),'Light race suspends professions')
 	game.enter_island()
 	for career_id in Catalog.IDS:
 		for data in Catalog.SKILLS[Catalog.index(career_id)]: check(cues.has('class_'+data[0]),'Audio cue reached playback '+data[0])

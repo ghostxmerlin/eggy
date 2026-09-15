@@ -163,7 +163,7 @@ func _process(delta: float) -> void:
 		for key in cooldowns.keys():
 			if cooldowns[key] < clock: cooldowns.erase(key)
 	if not game.player.active or game.player.finished or is_instance_valid(game.player.vehicle): return
-	if game.screen == 'racing' and game.rules.phase == 'racing' and not game.practice and game.rules.TIME_LIMIT-game.rules.elapsed < 30 and not urgent_spoken:
+	if game.screen == 'racing' and game.rules.phase == 'racing' and not game.practice and game.rules.time_left() < 30 and not urgent_spoken:
 		if speak('hurry'): urgent_spoken = true
 	elif chatter_wait <= 0 and game.player.velocity.length() > 2:
 		var context := 'hurry' if game.screen == 'racing' and game.player.position.z < -250 else 'move'

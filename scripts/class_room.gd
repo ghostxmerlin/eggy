@@ -42,7 +42,7 @@ func draw(h):
 	h.draw_rect(Rect2(0,0,1440,900),Color(.06,.10,.18,.65))
 	h.panel(Rect2(85,55,1270,790),h.WHITE,30,true)
 	h.txt('职业与天赋' if locked else '创建你的职业角色',Vector2(130,117),36,h.INK,true)
-	h.txt('职业随角色保存 · 岛屿、巅峰赛、决斗场共用五个技能',Vector2(132,156),21,h.TEAL)
+	h.txt('职业随角色保存 · 岛屿与决斗场使用 · 巅峰赛仅滚动、飞扑',Vector2(132,156),21,h.TEAL)
 	if not locked:
 		for i in range(4):
 			var x := 130+i*300

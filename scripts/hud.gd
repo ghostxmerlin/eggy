@@ -81,14 +81,14 @@ func _draw() -> void:
 		panel(Rect2(1110,48,280,44),Color(1,.99,.95,.92),22)
 		centered('单人操作   /   自由练习' if game.practice else '单机挑战   /   云端乐园',1250,77,19,INK,true)
 		panel(Rect2(53,827,1030,38),Color(1,1,.96,.80),16)
-		txt('W/S 前后   Q/E 平移   A/D 转向   空格 跳跃   1–5 技能   鼠标双键 前进   Esc 暂停',Vector2(70,853),18,INK)
+		txt('W/S 前后   Q/E 平移   A/D 转向   空格 跳跃   1 滚动 / 2 飞扑   鼠标双键 前进',Vector2(70,853),18,INK)
 		txt('一路向前  ·  放心起跳',Vector2(1135,854),17,INK)
 	else:
 		panel(Rect2(30,28,298,80),Color(1,.99,.96,.95),22,true)
 		panel(Rect2(42,40,56,56),TEAL,17)
 		centered('01',70,78,27,WHITE,true)
 		txt('云端冲冲赛',Vector2(111,65),24,INK,true)
-		txt('单人练习  ·  操作体验' if game.practice else '巅峰派对  ·  竞速晋级',Vector2(111,91),16,TEAL)
+		txt('单人练习  ·  操作体验' if game.practice else '轻松竞速  ·  滚动与飞扑',Vector2(111,91),16,TEAL)
 		panel(Rect2(1120,28,290,80),Color(1,.99,.96,.95),22,true)
 		if game.practice:
 			txt('自由练习',Vector2(1140,62),23,TEAL,true)
@@ -98,9 +98,9 @@ func _draw() -> void:
 		else:
 			txt('已晋级',Vector2(1140,60),18,INK)
 			txt('%02d / 24' % game.rules.order.size(),Vector2(1220,63),28,TEAL,true)
-			var left: float = maxf(0,150-game.rules.elapsed)
-			txt('剩余时间',Vector2(1140,91),15,INK)
-			txt('%02d:%02d' % [int(left)/60,int(left)%60],Vector2(1285,91),20,INK,true)
+			var left: int = ceili(game.rules.time_left())
+			txt('比赛结束' if game.rules.phase == 'ended' else '冲刺倒计时' if game.rules.first_finish >= 0 else '剩余时间',Vector2(1140,91),15,INK)
+			txt('--:--' if game.rules.phase == 'ended' else '%02d:%02d' % [int(left)/60,int(left)%60],Vector2(1285,91),20,INK,true)
 		if game.screen == 'racing':
 			panel(Rect2(31,128,130,42),Color(.13,.26,.34,.83),16)
 			centered('自由练习' if game.practice else '第 %02d 名' % game.current_place(),96,157,21,WHITE,true)
@@ -115,7 +115,7 @@ func _draw() -> void:
 				draw_circle(Vector2(507+424*ratio,725),4,Color('#fff0b5'))
 			txt('风车 / 门廊       高空窄桥       连续断桥',Vector2(552,754),15,INK)
 			txt('W/S 前后 · Q/E 平移 · A/D 转向',Vector2(34,822),16,INK)
-			txt('空格 跳跃 / R 道具 / T 回检查点',Vector2(34,846),17,INK)
+			txt('空格 跳跃 / Shift 滚动 / T 复位',Vector2(34,846),17,INK)
 			txt('Esc 暂停',Vector2(35,874),15,INK)
 		if game.rules.phase == 'countdown':
 			draw_rect(Rect2(0,0,1440,900),Color(.13,.27,.35,.10))
@@ -128,6 +128,13 @@ func _draw() -> void:
 		if game.toast_time > 0 and game.screen == 'racing':
 			panel(Rect2(514,125,412,49),Color(1,.97,.81,.95),24,true)
 			centered(game.toast,720,158,20,INK,true)
+		if not game.practice and game.rules.first_finish >= 0 and game.screen == 'racing' and game.rules.phase == 'racing':
+			var urgent: bool = game.rules.time_left() <= 10
+			var accent := Color('#c04b45') if urgent else TEAL
+			panel(Rect2(480,187,480,122),WHITE,24,true)
+			centered('最后冲刺   %d 秒' % ceili(game.rules.time_left()),720,232,32,accent,true)
+			centered('剩余 %d 个晋级名额' % game.rules.places_left(),720,266,22,INK,true)
+			centered('倒计时内冲线可晋级 · 名额满立即结束',720,293,17,accent)
 		if game.screen == 'result':
 			draw_rect(Rect2(0,0,1440,900),Color(.1,.23,.29,.24))
 			panel(Rect2(463,206,514,466),WHITE,32,true)
@@ -136,7 +143,8 @@ func _draw() -> void:
 			centered('练习完成！' if game.practice else ('成功晋级！' if qualified else '再冲一次吧'),720,339,47,INK,true)
 			centered('到达终点' if game.practice else ('第 %d 名' % game.player_place if qualified else '终点在等你'),720,418,43,TEAL,true)
 			centered('用时  %s' % game.format_time(game.finish_time) if qualified else '躲开转杆，跳过间隙，抓住滚动时机',720,461,21,INK)
-			centered('第一关挑战完成' if qualified else '每一次起跳都会更熟练',720,501,18,INK)
+			var reason := '24 个晋级名额已满' if game.rules.end_reason == 'capacity' else '冲刺倒计时结束，未能及时冲线' if game.rules.end_reason == 'finish_window' else '比赛限时已到，未能及时冲线'
+			centered('第一关挑战完成' if qualified else reason,720,501,18,INK)
 			button('retry',Rect2(497,541,225,62),'再跑一局')
 			button('island',Rect2(738,541,204,62),'返回岛屿',false)
 			centered('Enter 重新出发    ·    Esc 返回岛屿',720,646,16,INK)
@@ -184,7 +192,7 @@ func draw_island() -> void:
 	if not is_instance_valid(game.player.vehicle): button('gacha',Rect2(1220,578,184,54),'盲盒 · G',false)
 	if not is_instance_valid(game.player.vehicle): button('wardrobe',Rect2(1220,646,184,54),'衣柜 · B',false)
 	panel(Rect2(1064,723,342,145),WHITE,28,true)
-	txt('云端冲冲赛',Vector2(1087,757),23,INK,true)
+	txt('云端冲冲赛 · 轻松竞速',Vector2(1087,757),23,INK,true)
 	txt('第一关 · 32 位选手 · 前 24 名晋级',Vector2(1087,782),16,TEAL)
 	button('join',Rect2(1085,799,300,53),'参赛')
 	txt('Esc 休息 / T 回广场 / 回车 +500 加蛋币',Vector2(37,893),14,INK)
@@ -245,7 +253,8 @@ func draw_skills() -> void:
 	var kit = game.player.skills
 	var colors := [Color('#167f86'),Color('#d67b30'),Color('#467d9a'),Color('#329aca'),Color('#9661b4')]
 	for i in range(5):
-		var x := 450.0+i*110
+		if game.light_race() and i >= 2: break
+		var x := (615.0 if game.light_race() else 450.0)+i*110
 		var cd: float = kit.cooldown(i+1)
 		var riding: bool = is_instance_valid(game.player.vehicle)
 		var reserved: bool = not kit.career.enabled() and game.screen in ['duel','duel_result'] and i < 2

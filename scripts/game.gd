@@ -24,6 +24,7 @@ var toast := ''
 var toast_time := 0.0
 var go_time := 0.0
 var last_tick := 4
+var last_finish_tick := -1
 var show_metrics := false
 var last_frame_ms := 0.0
 var audio: Dictionary = {}
@@ -216,6 +217,9 @@ func join_race() -> void:
 	practice = false
 	start_race()
 
+func light_race() -> bool:
+	return not in_island and screen in ['menu','racing','result']
+
 func reset_racers() -> void:
 	var slots := range(racers.size())
 	# Shuffle slot assignment, not racer identity or the item/gacha random streams.
@@ -252,11 +256,12 @@ func start_race() -> void:
 	camera_yaw = 0
 	camera_pitch = 0
 	last_tick = 4
+	last_finish_tick = -1
 	toast_time = 0
 	result_age = 0
 	frame_times.clear()
 	reset_racers()
-	items.setup_race()
+	items.setup_race(false)
 	if autoplay: player.external_control = true
 	confetti.emitting = false
 
@@ -322,6 +327,11 @@ func _physics_process(delta: float) -> void:
 		go_time = 1.0
 		sound('go')
 		feedback.race_start()
+	if not practice and rules.first_finish >= 0 and rules.phase == 'racing' and screen == 'racing':
+		var seconds := ceili(rules.time_left())
+		if seconds <= 10 and seconds != last_finish_tick:
+			last_finish_tick = seconds
+			sound('tick')
 	for racer in racers:
 		racer.active = rules.phase == 'racing'
 	if rules.phase == 'ended' and screen != 'result':
@@ -485,9 +495,6 @@ func ui_action(action: String) -> void:
 		var parts := action.split('_')
 		class_room.talent(int(parts[2]),int(parts[3]))
 		return
-	if action in ['join','start','retry','restart'] and class_profile.class_id == '' and screen in ['island','menu']:
-		class_room.open('race')
-		return
 	if action.begins_with('duel_class_'):
 		duel.select_class(int(action.trim_prefix('duel_class_')))
 		return
@@ -519,6 +526,10 @@ func checkpoint_reached(index: int) -> void:
 func cross_finish(racer: CharacterBody3D) -> void:
 	var place: int = rules.finish(racer.racer_id)
 	if place == 0: return
+	if place == 1 and not practice:
+		toast = '首位选手已冲线，最后冲刺！'
+		toast_time = 3.0
+		sound('go')
 	racer.finished = true
 	racer.clear_item()
 	racer.collision_layer = 0

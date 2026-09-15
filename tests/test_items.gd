@@ -48,6 +48,7 @@ func run() -> void:
 	check(not game.items.enabled and game.items.pickups.is_empty(),'Island has no race item boxes')
 	game.join_race() # Career selection UI is covered by test_duel.gd.
 	items = game.items
+	items.setup_race() # Explicitly exercise the retained item subsystem.
 	check(items.pickups.size() == 44,'Competition supplies item boxes along ten safe rows')
 	game.set_physics_process(false)
 	items.set_physics_process(false)
