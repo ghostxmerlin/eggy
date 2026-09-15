@@ -17,6 +17,6 @@ void fragment() {
     float sweep = exp(-pow((reflection.x + reflection.y*.32 - sin(clock*.65)*.75)/.075,2.0));
     sweep *= smoothstep(-.2,.8,reflection.z);
     float fresnel = pow(1.0-max(dot(n,view),0.0),4.0);
-    ALBEDO = vec3(1.0,.77,.32)*(key*2.6+rim*1.8+sweep*.95+fresnel*.28);
+    ALBEDO = vec3(1.0,.77,.32)*(key*2.6+rim*1.8+sweep*1.2+fresnel*.28+.10);
     ALPHA = .72;
 }

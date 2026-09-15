@@ -159,3 +159,10 @@ Apple M4 Pro，Godot 4.7.2 Metal Forward+，1440×900；单独运行一个游戏
 - 原生 Godot 4.7.2、Apple M4、Metal Forward+、1440×900。实看 `captures/supreme-preview-front.png`、`supreme-preview-back.png`、`supreme-purple-comparison.png`、`supreme-jump.png`、`supreme-roll.png`、`supreme-island-front.png`、`supreme-island-back.png`。初版着色器在 unshaded 下写 EMISSION 导致披风/高光不可见，改为 HDR ALBEDO 后原生复核可见；几次中途退出无 PASS 的运行未计通过；最终使用 `--always-on-top --max-fps 60 --quit-after 3600` 完整通过，避免测试窗口被遮挡时截图等待的影响。最终日志为 `captures/supreme-native-final.log`。
 - 无界面 `test_skins.gd`、`test_gacha.gd`、`test_wardrobe.gd`、`test_gacha_presentation.gd` 全部 PASS；抽取样本 1568/100000，仍验证原票池与保底。初次演出回归因沙箱不能写测试存档而失败，按权限流程重新运行通过。资源导入完成；部分测试退出仍有此前的 ObjectDB/resource 提示；最终原生专项为 8 个实例、4 项资源。
 - 本轮未做帧时间基准、完整 32 人最坏情况性能、其他平台或发行包验证。当前外观为用户定制自建特效，最终观感仍以试玩反馈为准。
+
+## 2026-09-15：按反馈重做披风配色、喷焰与星屑
+
+- 用户未认可上一版效果：要求披风异色、光环去刻度改向后喷金焰、细小彩色粒子和更明亮的黄金。当前披风使用紫到蓝渐变，光环由 18 股独立波动的金橙喷焰替代刻度；火焰沿角色后方延伸，跑动拉长、滚动收短。粒子从 .095 缩至 .022 单位，160 粒随机初始彩色，生命周期仅淡出，不再统一金色。金甲提亮底色并补偿冷环境的暗部，保留覆膜和移动反光。
+- 原生 `test_supreme_effects.gd -- --visual` 两次 PASS，最终用 `--always-on-top --max-fps 60 --quit-after 3600`。新增侧面截图和喷焰后向范围、彩色初始渐变/细粒径检查；暂停、隐藏预览、换装、跑跳滚动及进入比赛均通过。第一版喷焰过曝偏白，改为保留金橙色的混合方式后复看正/背/侧面及动作截图。最终日志 `captures/supreme-colors-native.log`，截图仍为 `supreme-preview-*.png`、`supreme-island-*.png`、`supreme-jump.png`、`supreme-roll.png`。
+- Godot 4.7.2、Apple M4、Metal Forward+、1440×900。无界面 `test_skins.gd`、`test_gacha.gd`、`test_supreme_effects.gd` PASS；隔离存档未改玩家收藏或钱包。字体首次导入引擎在字体重导入阶段以 139 退出，重新导入完成；最终原生无脚本/着色器报错，无界面特效专项仍有 10 ObjectDB / 5 resources 的既有退出提示。
+- 未做本轮帧时间基准、跨平台或发行包验证；画面检查不等于用户对观感的认可。

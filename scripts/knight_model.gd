@@ -6,8 +6,8 @@ static func build(model: Node3D, root: Node3D, skin: Dictionary) -> void:
 	var white := S.mat(Color(skin.shell))
 	white.roughness = .22 if kind == 'knight' else .24
 	white.metallic = .62 if kind == 'knight' else .72
-	var edge := S.mat(Color('#b77518') if kind == 'knight' else Color(skin.shell).lightened(.36))
-	var silver := S.mat(Color('#ffe29a') if kind == 'knight' else Color('#f2f5ff'))
+	var edge := S.mat(Color('#e8a919') if kind == 'knight' else Color(skin.shell).lightened(.36))
+	var silver := S.mat(Color('#fff0a6') if kind == 'knight' else Color('#f2f5ff'))
 	var dark := S.mat(Color('#241d19') if kind == 'knight' else Color('#16283e'))
 	var rubber := S.mat(Color('#382f26') if kind == 'knight' else Color('#26334b'))
 	rubber.metallic = .08
@@ -17,8 +17,11 @@ static func build(model: Node3D, root: Node3D, skin: Dictionary) -> void:
 	if kind == 'knight':
 		var effects = load('res://scripts/supreme_effects.gd').new()
 		root.add_child(effects)
-		white.metallic = .88
-		white.roughness = .14
+		white.metallic = .72
+		white.roughness = .16
+		white.emission_enabled = true
+		white.emission = Color('#ffc820')
+		white.emission_energy_multiplier = .32
 		white.clearcoat_enabled = true
 		white.clearcoat = .85
 		white.clearcoat_roughness = .10

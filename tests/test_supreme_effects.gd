@@ -21,6 +21,9 @@ func run():
 		print('SUPREME EFFECTS: FAIL ',failures)
 		quit(1)
 		return
+	var flame_mesh: Mesh = preview_fx.corona.get_node('RearwardFlames').mesh
+	check(flame_mesh.get_aabb().position.z < -.5 and flame_mesh.get_aabb().end.z < .01,'Flames extend backwards from the halo')
+	check(preview_fx.particles.process_material.color_initial_ramp != null and preview_fx.particles.draw_pass_1.size.x < .03,'Sparkles have individual colors and a fine size')
 	var clock_before: float = preview_fx.clock
 	await frames(30)
 	check(preview_fx.clock > clock_before,'Wardrobe effects animate while the game world is paused')
@@ -28,6 +31,9 @@ func run():
 		game.gacha.preview.rotation.y = angle
 		await frames(25)
 		if visual: await game.screenshot('supreme-preview-'+('front' if angle < 0 else 'back'))
+	game.gacha.preview.rotation.y = PI/2
+	await frames(20)
+	if visual: await game.screenshot('supreme-preview-side')
 	game.gacha.viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
 	await frames(2)
 	clock_before = preview_fx.clock
@@ -53,7 +59,7 @@ func run():
 	for i in range(joined.get_surface_count()):
 		var material = joined.surface_get_material(i)
 		if material.clearcoat_enabled:
-			polished = material.metallic >= .85 and material.roughness <= .15 and material.next_pass != null
+			polished = material.metallic >= .7 and material.roughness <= .18 and material.next_pass != null
 	check(polished,'Compacted armor preserves polished metal, clearcoat and highlight pass')
 	game.player.position = Vector3(-20,0,33)
 	game.player.external_control = true

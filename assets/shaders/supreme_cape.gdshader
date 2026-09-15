@@ -1,5 +1,5 @@
 shader_type spatial;
-render_mode unshaded, cull_disabled, blend_add, depth_draw_never, shadows_disabled;
+render_mode unshaded, cull_disabled, blend_mix, depth_draw_never, shadows_disabled;
 uniform float clock = 0.0;
 uniform float motion = 0.0;
 uniform float fold = 0.0;
@@ -17,11 +17,10 @@ void fragment() {
     float border = 1.0-smoothstep(.008,.025,side);
     float seam = pow(max(0.0,cos(UV.x*31.4159)),22.0);
     float flow = pow(max(0.0,sin(UV.y*17.0-clock*2.2+UV.x*3.0)),10.0);
-    vec2 cell = fract(vec2(UV.x*21.0,UV.y*32.0+clock*.6))-.5;
-    float dust = (1.0-smoothstep(.035,.13,length(cell)))*(.5+.5*sin(UV.x*72.0+clock));
     float dissolve = 1.0-smoothstep(.82,1.0,UV.y);
     float hem = exp(-pow((UV.y-.9)/.013,2.0));
-    ALBEDO = vec3(1.0,.58,.10)*(.3+seam*.65+flow*.75+dust*1.4)
-             + vec3(1.0,.89,.50)*(border*3.2+hem*1.3);
-    ALPHA = (.23+border*.65+seam*.16+dust*.28)*dissolve;
+    vec3 cloth = mix(vec3(.19,.035,.52),vec3(.045,.16,.62),UV.y);
+    vec3 embroidery = mix(vec3(.68,.28,1.0),vec3(.18,.80,1.0),UV.y);
+    ALBEDO = cloth + embroidery*(border*1.25+seam*.13+flow*.14+hem*.35);
+    ALPHA = (.76+border*.18)*dissolve;
 }
