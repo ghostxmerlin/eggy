@@ -39,6 +39,7 @@ func forward() -> Vector3:
 	return Vector3(0,0,-1).rotated(Vector3.UP,racer.game.camera_yaw) if racer.is_player else Vector3(sin(racer.pivot.rotation.y),0,cos(racer.pivot.rotation.y))
 
 func use_skill(slot: int) -> bool:
+	if racer.game.duel and racer.game.duel.in_arena() and slot in [1,2]: return false
 	if is_instance_valid(racer.vehicle): return false
 	if slot < 1 or slot > 5 or racer.game.paused or not racer.active or racer.finished or controlled(): return false
 	if cooldown(slot) > 0 or dive_left > 0 or attack_left > 0 or racer.roll_left > 0: return false
@@ -247,6 +248,7 @@ func sweep_contacts(from_phase: float, to_phase: float) -> void:
 				launch.y = 0
 				launch = launch.normalized()
 			target.skills.receive_impulse(launch*(12.0 if airborne else 9.0)*racer.body_mass,.85 if airborne else .42)
+			if racer.game.duel: racer.game.duel.register_hit(racer,target)
 
 func movement(direction: Vector3) -> Vector3:
 	if frozen_left > 0: return Vector3.ZERO

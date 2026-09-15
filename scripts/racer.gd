@@ -110,6 +110,7 @@ func request_jump() -> void:
 	if active and not finished and not game.paused and not is_instance_valid(vehicle) and not skills.controlled() and skills.dive_left <= 0: jump_buffer = .14
 
 func request_roll() -> void:
+	if game.duel and game.duel.in_arena(): return
 	if active and not finished and not game.paused and not is_instance_valid(vehicle) and not skills.controlled() and skills.dive_left <= 0 and skills.attack_left <= 0 and roll_cooldown <= 0:
 		roll_left = .85
 		roll_cooldown = 3.3
@@ -157,6 +158,9 @@ func reset_to_start(pos: Vector3) -> void:
 	reset_physics_interpolation()
 
 func respawn() -> void:
+	if game.duel and game.duel.in_arena():
+		game.duel.fell(self)
+		return
 	leave_vehicle()
 	clear_item()
 	skills.reset()
@@ -248,6 +252,9 @@ func _physics_process(delta: float) -> void:
 	if skills.fear_left > 0: speed = 5.0
 	if direction.length_squared()>0.01 or (is_player and active):
 		var facing: float = game.camera_yaw+PI if is_player and not external_control else atan2(direction.x,direction.z)
+		if game.duel and game.duel.in_arena() and not is_player:
+			var to_player: Vector3 = game.player.position-position
+			facing = atan2(to_player.x,to_player.z)
 		if skills.fear_left > 0: facing = atan2(direction.x,direction.z)
 		var turn_rate := 28.0 if is_player else 14.0
 		pivot.rotation.y = lerp_angle(pivot.rotation.y,facing,1-exp(-delta*turn_rate))
@@ -294,12 +301,12 @@ func _physics_process(delta: float) -> void:
 			squash = .75
 			game.action_sound('knockdown',self)
 		if position.y < -6: respawn()
-		if not game.in_island and position.y > -.2 and position.y < 2.5 and absf(position.x)<9.3:
+		if game.screen in ['racing','result'] and position.y > -.2 and position.y < 2.5 and absf(position.x)<9.3:
 			for i in range(1,game.course.CHECKPOINTS.size()):
 				if position.z < game.course.CHECKPOINTS[i].z and i > checkpoint:
 					checkpoint = i
 					if is_player: game.checkpoint_reached(i)
-		if not game.in_island and position.z < game.course.FINISH_Z and absf(position.x) < 10.7 and position.y > -.2 and position.y < 2.5:
+		if game.screen in ['racing','result'] and position.z < game.course.FINISH_Z and absf(position.x) < 10.7 and position.y > -.2 and position.y < 2.5:
 			game.cross_finish(self)
 		furthest = minf(furthest,position.z)
 	animate(delta)

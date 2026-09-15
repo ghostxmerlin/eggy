@@ -60,7 +60,7 @@ func _ready() -> void:
 	voice.finished.connect(func(): subtitle.hide())
 
 func play(cue: String, racer, strength := 1.0) -> bool:
-	if not streams.has(cue) or game.paused or game.screen not in ['island','racing']: return false
+	if not streams.has(cue) or game.paused or game.screen not in ['island','racing','duel']: return false
 	if not is_instance_valid(racer) or not is_instance_valid(game.player): return false
 	var own: bool = racer.is_player
 	if not own and racer.global_position.distance_to(game.player.global_position) > 20: return false
@@ -108,7 +108,7 @@ func speak(context: String, chance := 1.0) -> bool:
 	if game.paused or voice.playing or voice_wait > 0 or is_instance_valid(game.player.vehicle): return false
 	if context == 'win':
 		if not game.player.finished: return false
-	elif game.screen not in ['island','racing'] or game.player.finished: return false
+	elif game.screen not in ['island','racing','duel'] or game.player.finished: return false
 	if rng.randf() > chance: return false
 	var choices: Array = LINES.keys().filter(func(id): return LINES[id][0] == context and id not in recent_lines)
 	if choices.is_empty(): choices = LINES.keys().filter(func(id): return LINES[id][0] == context and (recent_lines.is_empty() or id != recent_lines.back()))

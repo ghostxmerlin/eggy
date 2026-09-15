@@ -47,6 +47,7 @@ var wardrobe: Control
 var gacha: Control
 var coin_console: Control
 var items: Node3D
+var duel: Node
 @export var item_seed := -1
 @export var start_seed := -1
 var start_rng := RandomNumberGenerator.new()
@@ -111,6 +112,9 @@ func _ready() -> void:
 	items = preload('res://scripts/race_items.gd').new()
 	items.game = self
 	add_child(items)
+	duel = preload('res://scripts/duel.gd').new()
+	duel.game = self
+	add_child(duel)
 	autoplay = '--autoplay' in args
 	capture_run = '--capture' in args
 	profile_run = '--profile' in args
@@ -220,6 +224,8 @@ func reset_racers() -> void:
 		racers[i].reset_to_start(p)
 
 func start_race() -> void:
+	if duel and (duel.in_arena() or screen == 'duel_lobby'):
+		enter_island()
 	close_modals()
 	feedback.reset()
 	release_mouse_drive()
@@ -253,6 +259,7 @@ func replace_world(next_world: Node3D) -> void:
 	add_child(course)
 
 func enter_island() -> void:
+	if duel: duel.clear()
 	close_modals()
 	feedback.reset()
 	items.clear()
@@ -290,6 +297,9 @@ func enter_island() -> void:
 
 func _physics_process(delta: float) -> void:
 	if paused: return
+	if duel and duel.in_arena():
+		duel.tick(delta)
+		return
 	if in_island:
 		player.active = true
 		return
@@ -348,7 +358,10 @@ func update_camera(delta: float) -> void:
 	var riding := is_instance_valid(player.vehicle)
 	var desired: Vector3
 	var focus: Vector3
-	if screen == 'menu':
+	if screen in ['duel','duel_result']:
+		desired = p+Vector3(0,8.4+camera_pitch*5,11).rotated(Vector3.UP,camera_yaw)
+		focus = p+Vector3(0,1.0,0)
+	elif screen == 'menu':
 		desired = p + Vector3(6.2+sin(elapsed_real*.16)*.45,3.8,7.6)
 		focus = p + Vector3(-1.9,1.0,-4.8)
 	elif screen == 'result':
@@ -365,7 +378,7 @@ func update_camera(delta: float) -> void:
 		var query := PhysicsRayQueryParameters3D.create(p+Vector3(0,.5 if in_island else 1.6,0),desired,1)
 		var hit := get_world_3d().direct_space_state.intersect_ray(query)
 		if not hit.is_empty(): desired = hit.position+hit.normal*.45
-	var follow_rate := 24.0 if screen in ['racing','island'] else 6.8
+	var follow_rate := 24.0 if screen in ['racing','island','duel'] else 6.8
 	if riding: follow_rate = 12.0
 	camera.position = camera.position.lerp(desired,1-exp(-delta*follow_rate))
 	if camera.position.distance_to(focus)>.1: camera.look_at(focus)
@@ -374,6 +387,13 @@ func update_camera(delta: float) -> void:
 	camera.fov = lerpf(camera.fov,target_fov,1-exp(-delta*4))
 
 func _input(event: InputEvent) -> void:
+	if screen == 'duel_lobby':
+		if event is InputEventKey and event.pressed and not event.echo:
+			if event.physical_keycode >= KEY_1 and event.physical_keycode <= KEY_4: duel.select_class(event.physical_keycode-KEY_1)
+			elif event.physical_keycode in [KEY_ENTER,KEY_KP_ENTER]: duel.begin()
+			elif event.physical_keycode == KEY_ESCAPE: enter_island()
+			get_viewport().set_input_as_handled()
+		return
 	if coin_console and coin_console.visible:
 		if event is InputEventKey and event.physical_keycode == KEY_TAB:
 			get_viewport().set_input_as_handled()
@@ -398,7 +418,7 @@ func _input(event: InputEvent) -> void:
 		return
 	if event is InputEventMouseButton and event.button_index in [MOUSE_BUTTON_LEFT,MOUSE_BUTTON_RIGHT]:
 		var both: bool = (event.button_mask & (MOUSE_BUTTON_MASK_LEFT | MOUSE_BUTTON_MASK_RIGHT)) == (MOUSE_BUTTON_MASK_LEFT | MOUSE_BUTTON_MASK_RIGHT)
-		mouse_forward = both and screen in ['island','racing'] and not paused and player.active and not player.finished
+		mouse_forward = both and screen in ['island','racing','duel'] and not paused and player.active and not player.finished
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED if mouse_forward else Input.MOUSE_MODE_VISIBLE
 	if event is InputEventKey and event.pressed and not event.echo:
 		match event.physical_keycode:
@@ -406,26 +426,28 @@ func _input(event: InputEvent) -> void:
 				if screen == 'island' and not paused:
 					coin_console.open()
 					get_viewport().set_input_as_handled()
+				elif screen == 'duel_result': duel.begin()
 				elif screen in ['menu','result'] and not paused: start_race()
 			KEY_ESCAPE:
-				if screen == 'result': enter_island()
-				elif screen in ['racing','island']: toggle_pause()
+				if screen in ['result','duel_result']: enter_island()
+				elif screen in ['racing','island','duel']: toggle_pause()
 			KEY_R:
 				items.use_item(player)
 			KEY_T:
 				if screen in ['racing','island'] and not paused: player.respawn()
 			KEY_B: wardrobe.open()
 			KEY_G: gacha.open()
+			KEY_J: duel.open_room()
 			KEY_F3: show_metrics = not show_metrics
 			KEY_F12: screenshot('manual-%d' % Time.get_ticks_msec())
-	if event is InputEventMouseMotion and (mouse_forward or Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT)) and screen in ['racing','island'] and not paused:
+	if event is InputEventMouseMotion and (mouse_forward or Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT)) and screen in ['racing','island','duel'] and not paused:
 		# Screen-space delta stays consistent when viewport stretch or window size changes.
 		var movement: Vector2 = event.screen_relative if event.screen_relative != Vector2.ZERO else event.relative
 		camera_yaw -= movement.x*.005
 		camera_pitch = clampf(camera_pitch+movement.y*.004,-.5,.6)
 
 func toggle_pause() -> void:
-	if screen in ['racing','island']: paused = not paused
+	if screen in ['racing','island','duel']: paused = not paused
 	if paused: release_mouse_drive()
 
 func release_mouse_drive() -> void:
@@ -440,7 +462,12 @@ func modal_open() -> bool:
 
 func ui_action(action: String) -> void:
 	if modal_open(): return
+	if action.begins_with('duel_class_'):
+		duel.select_class(int(action.trim_prefix('duel_class_')))
+		return
 	match action:
+		'duel_room': duel.open_room()
+		'duel_begin': duel.begin()
 		'join': join_race()
 		'start','retry','restart': start_race()
 		'wardrobe': wardrobe.open()
