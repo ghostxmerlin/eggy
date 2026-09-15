@@ -14,6 +14,18 @@ static func build(model: Node3D, root: Node3D, skin: Dictionary) -> void:
 	rubber.roughness = .65
 	var blue := S.mat(Color(skin.accent) if kind == 'knight' else Color('#6ae7ff') if kind == 'gale' else Color('#c66dff'),true)
 	blue.emission_energy_multiplier = .85 if kind == 'knight' else 1.15
+	if kind == 'knight':
+		var effects = load('res://scripts/supreme_effects.gd').new()
+		root.add_child(effects)
+		white.metallic = .88
+		white.roughness = .14
+		white.clearcoat_enabled = true
+		white.clearcoat = .85
+		white.clearcoat_roughness = .10
+		white.next_pass = effects.glint
+		silver.next_pass = effects.glint
+		edge.next_pass = effects.glint
+		blue.emission_energy_multiplier = 4.2
 	model.find_child('Body',true,false).layers = 0
 	# A closed continuous shell supports the front panels and carries the backpack.
 	S.ball(root,Vector3(0,1.02,-.035),Vector3(.625,.645,.50),white)

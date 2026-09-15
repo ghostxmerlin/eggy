@@ -16,4 +16,6 @@ static func environment() -> Environment:
 	settings.ambient_light_energy = .35
 	settings.tonemap_mode = Environment.TONE_MAPPER_ACES
 	settings.tonemap_exposure = .8
+	settings.glow_enabled = true
+	settings.glow_intensity = .55
 	return settings

@@ -162,7 +162,7 @@ static func compact(parent: Node3D) -> void:
 		if not child is MeshInstance3D: continue
 		var material: StandardMaterial3D = child.material_override
 		if not material: continue
-		var key := str([material.albedo_color,material.metallic,material.roughness,material.emission_enabled,material.emission,material.emission_energy_multiplier,material.cull_mode])
+		var key := str([material.albedo_color,material.metallic,material.roughness,material.emission_enabled,material.emission,material.emission_energy_multiplier,material.cull_mode,material.clearcoat_enabled,material.clearcoat,material.clearcoat_roughness,material.next_pass])
 		if not groups.has(key): groups[key] = {'material':material,'vertices':PackedVector3Array(),'normals':PackedVector3Array(),'indices':PackedInt32Array()}
 		var group: Dictionary = groups[key]
 		var transform: Transform3D = child.transform

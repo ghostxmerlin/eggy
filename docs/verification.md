@@ -151,3 +151,11 @@ Apple M4 Pro，Godot 4.7.2 Metal Forward+，1440×900；单独运行一个游戏
 - 按用户要求将 `mecha` 主装甲、包边、高光、能量眼和纹路改为黄金配色，针对岛上冷色环境光调整金属反射比例。保持原皮肤 ID、名称与已有收藏；岚/烈配色沿用原值。
 - `test_skins.gd`、无界面 `test_gacha_ui.gd` PASS；后者仍有退出资源提示。两次原生全套自动输入测试未通过，表现为 G/十连及弹窗后续状态不符，原因未定位，未把这些运行记为通过。本次生产代码仅改配色和材质。
 - 使用隔离存档直接打开原生预览并在岛上应用金甲，核对 `captures/gold-mecha-preview.png`、`captures/gold-mecha-island.png`；临时预览脚本在忽略的 captures 目录，没有改玩家存档。Godot 4.7.2、Apple M4、Metal Forward+、1440×900。未作新增性能或跨平台验证。
+
+## 2026-09-15：黄金至臻专属光效与粒子披风
+
+- 仅黄金 `mecha` 增加金属覆膜与移动反光、强发光纹路、日冕光环、双片流光披风和 96 粒 GPU 光粒。披风按真实速度扬起，滚动/飞扑收拢；世界暂停与隐藏预览停止动画，换装释放，远处减少出粒量，瞬移重启拖尾。保留皮肤 ID、收藏、抽取概率和原胶囊碰撞参数。
+- `test_supreme_effects.gd` 无界面和原生 PASS：检查预览在世界暂停时继续、隐藏后停止与恢复、换到紫皮移除至臻特效、材质合并保留金属覆膜和高光 pass、真实跑动/起跳/滚动、暂停/恢复、换装清理、穿着进入比赛。测试用独立存档。第一次滚动断言因 GPU 属性回读 .3000000119 与 .3 的浮点误差失败，改为容差比较；没有修改技能行为来通过测试。
+- 原生 Godot 4.7.2、Apple M4、Metal Forward+、1440×900。实看 `captures/supreme-preview-front.png`、`supreme-preview-back.png`、`supreme-purple-comparison.png`、`supreme-jump.png`、`supreme-roll.png`、`supreme-island-front.png`、`supreme-island-back.png`。初版着色器在 unshaded 下写 EMISSION 导致披风/高光不可见，改为 HDR ALBEDO 后原生复核可见；几次中途退出无 PASS 的运行未计通过；最终使用 `--always-on-top --max-fps 60 --quit-after 3600` 完整通过，避免测试窗口被遮挡时截图等待的影响。最终日志为 `captures/supreme-native-final.log`。
+- 无界面 `test_skins.gd`、`test_gacha.gd`、`test_wardrobe.gd`、`test_gacha_presentation.gd` 全部 PASS；抽取样本 1568/100000，仍验证原票池与保底。初次演出回归因沙箱不能写测试存档而失败，按权限流程重新运行通过。资源导入完成；部分测试退出仍有此前的 ObjectDB/resource 提示；最终原生专项为 8 个实例、4 项资源。
+- 本轮未做帧时间基准、完整 32 人最坏情况性能、其他平台或发行包验证。当前外观为用户定制自建特效，最终观感仍以试玩反馈为准。
