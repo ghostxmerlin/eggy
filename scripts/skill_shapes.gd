@@ -18,12 +18,3 @@ static func snowflake(width: float) -> Mesh:
 			for side in [-1,1]:
 				strip(surface,joint,joint+direction.rotated(Vector3.UP,side*PI/3)*.74,width*.8)
 	return surface.commit()
-
-static func sweep_arc() -> Mesh:
-	var surface := SurfaceTool.new()
-	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
-	for i in range(32):
-		var a := lerpf(-1.5,1.5,float(i)/32)
-		var b := lerpf(-1.5,1.5,float(i+1)/32)
-		strip(surface,Vector3(sin(a),0,-cos(a))*2.2,Vector3(sin(b),0,-cos(b))*2.2,.15)
-	return surface.commit()

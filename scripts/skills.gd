@@ -1,5 +1,6 @@
 extends Node3D
 
+const Swing = preload('res://scripts/swing_motion.gd')
 const COOLDOWNS := [3.3, 3.0, 4.0, 10.0, 15.0]
 const NAMES := ['滚动', '飞扑', '咸鱼棒', '冰锥术', '破胆怒吼']
 const FREEZE_SECONDS := 2.0
@@ -54,12 +55,11 @@ func use_skill(slot: int) -> bool:
 			burst('dive', Color('#fff1a2'), 1.6, .45)
 			racer.game.action_sound('dive',racer)
 		3:
-			attack_left = .52
+			attack_left = Swing.DURATION
 			attack_pending = true
 			swing_hits.clear()
 			attack_forward = forward()
-			pose_fish(0.0)
-			fish.show()
+			fish.begin()
 		4:
 			for target in targets(6.0, deg_to_rad(65)):
 				target.skills.apply_freeze()
@@ -97,7 +97,7 @@ func cancel_action() -> void:
 	knockback_left = 0
 	dive_hits.clear()
 	swing_hits.clear()
-	fish.hide()
+	fish.cancel()
 
 func apply_freeze() -> void:
 	if frozen_left <= 0: racer.game.action_sound('freeze',racer,1.0,true)
@@ -142,14 +142,13 @@ func tick(delta: float) -> void:
 	attack_left = maxf(0,attack_left-delta)
 	if attack_pending and attack_left <= .42:
 		attack_pending = false
-		burst('hit', Color('#ffda76'), 2.5, .24)
 		racer.game.action_sound('swing',racer)
 	if attack_left > 0:
-		var old_phase := clampf((.52-previous_attack-.10)/.28,0,1)
-		var phase := clampf((.52-attack_left-.10)/.28,0,1)
+		var old_phase := Swing.phase(Swing.DURATION-previous_attack)
+		var phase := Swing.phase(Swing.DURATION-attack_left)
 		if phase > old_phase: sweep_contacts(old_phase,phase)
-		pose_fish(phase)
-	else: fish.hide()
+		fish.advance(Swing.DURATION-attack_left,delta)
+	else: fish.cancel()
 	ice.visible = frozen_left > 0
 	status.visible = frozen_left > 0
 	status.text = '冻结 %.1f' % frozen_left
@@ -171,10 +170,6 @@ func tick(delta: float) -> void:
 		if effect.kind == 'ice': fade = 1.0-smoothstep(.6,1.0,progress)
 		effect.material.albedo_color.a = fade*(.95 if effect.kind == 'ice' else .7)
 		if effect.has('core'): effect.core.albedo_color.a = fade*.9
-
-func pose_fish(phase: float) -> void:
-	var direction := attack_forward.rotated(Vector3.UP,lerpf(-1.5,1.5,phase))
-	fish.transform = Transform3D(Basis(direction.cross(Vector3.UP),direction,Vector3.UP).scaled(Vector3.ONE*1.5),Vector3(0,1.05,0)+direction*.4)
 
 func receive_impulse(impulse: Vector3, duration: float) -> void:
 	if frozen_left > 0: return
@@ -221,29 +216,34 @@ func resolve_dive_collisions(incoming: Vector3) -> void:
 
 func sweep_contacts(from_phase: float, to_phase: float) -> void:
 	var count := maxi(1,ceili((to_phase-from_phase)*3.0/.07))
-	var origin := racer.global_position+Vector3(0,1.05,0)
 	for sample in range(count+1):
 		var phase := lerpf(from_phase,to_phase,float(sample)/count)
 		var radial := attack_forward.rotated(Vector3.UP,lerpf(-1.5,1.5,phase))
-		var a := origin+radial*.4
-		var b := origin+radial*2.3
+		var shaft := Swing.shaft(attack_forward,phase)
+		var a := racer.global_position+shaft[0]
+		var b := racer.global_position+shaft[1]
 		for target in get_tree().get_nodes_in_group('combatants'):
 			if target == racer or not target.active or target.finished or swing_hits.has(target.get_instance_id()): continue
-			# Closest points between the horizontal fish shaft and the target's vertical capsule.
-			var center: Vector3 = target.global_position
-			center.y = clampf(origin.y,center.y+.54,center.y+1.22)
-			var point: Vector3 = a+(b-a)*clampf((center-a).dot(b-a)/(b-a).length_squared(),0,1)
+			# Both appearances use the same descending shaft against a vertical capsule.
+			var closest := Geometry3D.get_closest_points_between_segments(a,b,target.global_position+Vector3.UP*.54,target.global_position+Vector3.UP*1.22)
+			var point: Vector3 = closest[0]
+			var center: Vector3 = closest[1]
 			var contact := center-point
 			if contact.length_squared() > .74*.74: continue
-			var query := PhysicsRayQueryParameters3D.create(origin,center,5)
+			var query := PhysicsRayQueryParameters3D.create(racer.global_position+Vector3.UP*1.05,center,5)
 			if not racer.get_world_3d().direct_space_state.intersect_ray(query).is_empty(): continue
 			swing_hits[target.get_instance_id()] = true
+			fish.impact(point)
 			racer.game.action_sound('hit',racer)
 			var normal := contact.normalized() if contact.length_squared() > .001 else radial
 			var tangent := Vector3.UP.cross(radial)
 			var airborne: bool = not target.is_on_floor()
 			var launch := (normal*.8+tangent*.30+radial*.30).normalized()
-			if not airborne:
+			if airborne:
+				# A descending blade can meet the capsule at equal height: retain the jump launch.
+				launch.y = maxf(launch.y,.42)
+				launch = launch.normalized()
+			else:
 				launch.y = 0
 				launch = launch.normalized()
 			target.skills.receive_impulse(launch*(12.0 if airborne else 9.0)*racer.body_mass,.85 if airborne else .42)
@@ -278,23 +278,9 @@ func ellipsoid(parent: Node3D, pos: Vector3, size: Vector3, mat: Material) -> Me
 	return obj
 
 func build_visuals() -> void:
-	fish = Node3D.new()
+	fish = preload('res://scripts/swing_visual.gd').new()
 	fish.name = 'SaltedFishClub'
 	add_child(fish)
-	var silver := material(Color('#a6dfdd'))
-	var blue := material(Color('#4e91b0'))
-	var cream := material(Color('#fff1c2'))
-	ellipsoid(fish,Vector3(0,.63,0),Vector3(.24,.66,.16),silver)
-	ellipsoid(fish,Vector3(0,.80,.11),Vector3(.19,.35,.08),cream)
-	for side in [-1,1]:
-		var tail := ellipsoid(fish,Vector3(side*.14,-.06,0),Vector3(.17,.27,.075),blue)
-		tail.rotation.z = side*.65
-		var fin := ellipsoid(fish,Vector3(side*.23,.51,0),Vector3(.18,.08,.09),blue)
-		fin.rotation.z = side*.5
-		ellipsoid(fish,Vector3(side*.115,1.03,.14),Vector3(.071,.082,.052),cream)
-		ellipsoid(fish,Vector3(side*.115,1.04,.185),Vector3(.033,.041,.025),material(Color('#264b68')))
-	ellipsoid(fish,Vector3(0,1.22,.04),Vector3(.10,.045,.10),blue)
-	fish.hide()
 	ice = MeshInstance3D.new()
 	var crystal := CylinderMesh.new()
 	crystal.top_radius = .48
@@ -370,13 +356,6 @@ func burst(kind: String, color: Color, radius: float, duration: float) -> void:
 		lines.material_override = core
 		lines.position.y = .006
 		root.add_child(lines)
-	elif kind == 'hit':
-		root.global_position.y = racer.global_position.y+1.05
-		root.rotation.y = atan2(-attack_forward.x,-attack_forward.z)
-		var trail := MeshInstance3D.new()
-		trail.mesh = preload('res://scripts/skill_shapes.gd').sweep_arc()
-		trail.material_override = mat
-		root.add_child(trail)
 	else:
 		var ring := MeshInstance3D.new()
 		var mesh := TorusMesh.new()

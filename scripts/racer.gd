@@ -333,5 +333,17 @@ func animate(delta: float) -> void:
 		node.rotation.x = phase*.35
 		if not grounded and part.begins_with('Arm'): node.rotation.z = sign_value*-.65
 		else: node.rotation.z = sign_value*(.12+sin(bob)*.12)*walk_weight if part.begins_with('Arm') else 0
+	var slash_pose := Vector3.ZERO
+	if skills.attack_left > 0:
+		var elapsed: float = skills.fish.visual_time
+		var progress := preload('res://scripts/swing_motion.gd').phase(elapsed)
+		var weight := sin(PI*clampf(elapsed/.52,0,1))
+		pivot.rotation.y = atan2(skills.attack_forward.x,skills.attack_forward.z)
+		slash_pose = Vector3(lerpf(-.13,.22,progress),lerpf(-.28,.32,progress),lerpf(.13,-.18,progress))*weight
+		for part in ['ArmL','ArmR']:
+			if limbs.has(part):
+				limbs[part][0].rotation.x += lerpf(-.7,.35,progress)*weight
+	model.rotation = model.rotation.lerp(slash_pose,1-exp(-delta*28))
+	if skills.attack_left > 0: skills.fish.sync_hands()
 	var outfit_rig := model.get_node_or_null('SkinAccessories/OutfitRig')
 	if outfit_rig: outfit_rig.sync()

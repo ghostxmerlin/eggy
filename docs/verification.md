@@ -166,3 +166,13 @@ Apple M4 Pro，Godot 4.7.2 Metal Forward+，1440×900；单独运行一个游戏
 - 原生 `test_supreme_effects.gd -- --visual` 两次 PASS，最终用 `--always-on-top --max-fps 60 --quit-after 3600`。新增侧面截图和喷焰后向范围、彩色初始渐变/细粒径检查；暂停、隐藏预览、换装、跑跳滚动及进入比赛均通过。第一版喷焰过曝偏白，改为保留金橙色的混合方式后复看正/背/侧面及动作截图。最终日志 `captures/supreme-colors-native.log`，截图仍为 `supreme-preview-*.png`、`supreme-island-*.png`、`supreme-jump.png`、`supreme-roll.png`。
 - Godot 4.7.2、Apple M4、Metal Forward+、1440×900。无界面 `test_skins.gd`、`test_gacha.gd`、`test_supreme_effects.gd` PASS；隔离存档未改玩家收藏或钱包。字体首次导入引擎在字体重导入阶段以 139 退出，重新导入完成；最终原生无脚本/着色器报错，无界面特效专项仍有 10 ObjectDB / 5 resources 的既有退出提示。
 - 未做本轮帧时间基准、跨平台或发行包验证；画面检查不等于用户对观感的认可。
+
+## 2026-09-15：弧线挥击与黄金至臻粉色激光剑
+
+- 咸鱼棒改为 0.10 秒抬起蓄势、0.28 秒加速下压并向侧面扫出、0.14 秒收势；武器尖端从高到低跨过身体前方。移除一次性平面圆弧，拖尾逐帧跟随挥击；双手跟随握柄，普通角色补肩臂连接，机甲沿用装甲连接。首次命中有 45 ms 视觉顿挫和接触闪光，只影响武器/动作呈现，不暂停物理、冷却或受击者。
+- `mecha` 使用粉色光刃、金属握柄和粉色拖尾，其他皮肤保留咸鱼棒。两者共用挥击曲线、命中采样、4 秒冷却、总时长 .52 秒、水平轴向最远 2.3 与接触余量 .74、地面/空中 9/12 基础冲量。同一挥击每目标只命中一次，保留遮挡检测。命中使用斜向武器段和竖向胶囊最近点；为避免下劈碰到空中胶囊中部导致丢失击飞，空中冲量方向增加最低上挑分量后归一化，地面仍不增加垂直冲量。
+- `test_swing_visual.gd` 无界面及最终原生 PASS：下压/侧扫与加速、三种皮肤的武器选择/相同冲量与冷却、重复命中抑制、实际命中顿挫、手掌贴住握柄、肩臂连接无剪切、暂停、中断、重生与收势清理。测试隔离存档；原生截图采样时暂停世界保留对应动作姿态。Godot 4.7.2、Apple M4、Metal Forward+、1440×900。核对 `captures/swing-classic-*.png`、`swing-mecha-*.png` 和 `swing-mecha_blaze-*.png`；最终日志 `captures/swing-native.log`。初版连接件非均匀缩放出现拉长，改为沿局部轴缩放后复核修复。
+- 无界面 `test_skills.gd`、`test_impacts.gd`、`test_skill_input.gd`、`test_gameplay_audio.gd`、`test_skins.gd` PASS；声音回归仅验证触发，未用无界面零混音样本声称真实听感通过。首次击飞回归未通过，补齐空中上挑后复测，目标 apex 超过 1.4，地面仍低于 .2。完整 `test_race.gd` PASS：种子 2026，53.50 秒、24 人晋级、玩家第 9、27 名人机使用道具，与之前一致。
+- 资源导入和 `git diff --check` 通过。部分无界面退出仍有既有 ObjectDB/resource 提示；最终原生专项无脚本/渲染错误。未测本轮帧时间基准、其他平台或发行包；力量感与手感仍需实际试玩反馈。
+
+原生专项：`.tools/Godot.app/Contents/MacOS/Godot --path . --always-on-top --max-fps 60 --quit-after 3600 --script tests/test_swing_visual.gd -- --visual`。
