@@ -9,3 +9,8 @@
 - `scripts/outfit_models.gd` and `knight_model.gd` build all nine collectible outfits from procedural meshes. Three mechs visually reference [NetEase’s 2022 Judgment Knight introduction](https://game.xiaomi.com/viewpoint/1123748901_1654068347893_100); they are original simplified geometry in this project, not official extracted models. The reference image is not bundled. Armor plates have closed backs and beveled edges; `outfit_rig.gd` bridges the torso and animated limbs.
 - `scripts/supreme_effects.gd`, `assets/shaders/supreme_gold.gdshader` and `supreme_cape.gdshader` procedurally generate the custom golden supreme finish, animated violet/blue cape, rearward gold flames (`supreme_flames.gdshader`), halo and tiny multicolored GPU spark texture. These are original effects for this project, created for the user’s gold customization; no official effect assets are bundled.
 - `scripts/swing_visual.gd` builds the existing fish club and a custom pink energy sword for the golden supreme outfit, plus procedural motion ribbons and contact flashes. `swing_motion.gd` supplies their shared descending arc; no external weapon models or franchise assets are used.
+
+
+## 职业技能反馈（2026-09-15）
+
+`class_effects.gd` 自建冰晶、星形眩晕、盾面、箭矢、弓、光环与飘字；`swing_visual.gd` 自建职业近战武器并保留原黄金机甲粉色激光剑。`art/build_class_audio.py` 以 Python 标准库合成 28 个分层职业音效，生成物为 `assets/audio/classes/*.wav`。职业名称和技能概念参考魔兽世界，几何和音频均为本项目生成。参考链接见 `docs/classes.md`。

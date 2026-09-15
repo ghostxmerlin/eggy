@@ -48,6 +48,8 @@ var gacha: Control
 var coin_console: Control
 var items: Node3D
 var duel: Node
+var class_profile: RefCounted
+var class_room: Node
 @export var item_seed := -1
 @export var start_seed := -1
 var start_rng := RandomNumberGenerator.new()
@@ -61,6 +63,7 @@ func _ready() -> void:
 	in_island = practice and not ('--practice' in args or '--autoplay' in args or '--profile' in args)
 	skin_store = preload('res://scripts/skin_store.gd').new(skin_save_path)
 	skin_store.load_skin()
+	class_profile = preload('res://scripts/class_profile.gd').new(skin_save_path+'.career')
 	configure_inputs()
 	configure_render_scale()
 	build_lighting()
@@ -115,6 +118,9 @@ func _ready() -> void:
 	duel = preload('res://scripts/duel.gd').new()
 	duel.game = self
 	add_child(duel)
+	class_room = preload('res://scripts/class_room.gd').new()
+	class_room.game = self
+	add_child(class_room)
 	autoplay = '--autoplay' in args
 	capture_run = '--capture' in args
 	profile_run = '--profile' in args
@@ -203,6 +209,8 @@ func add_racer(id: int) -> void:
 	racer.is_player = id == 0
 	add_child(racer)
 	racers.append(racer)
+	if class_profile and class_profile.class_id != '':
+		racer.skills.career.configure(class_profile.class_id if id == 0 else preload('res://scripts/class_catalog.gd').IDS[id%4],class_profile.talents if id == 0 else [1,1,1])
 
 func join_race() -> void:
 	practice = false
@@ -387,6 +395,12 @@ func update_camera(delta: float) -> void:
 	camera.fov = lerpf(camera.fov,target_fov,1-exp(-delta*4))
 
 func _input(event: InputEvent) -> void:
+	if screen == 'career':
+		if event is InputEventKey and event.pressed and not event.echo:
+			if event.physical_keycode == KEY_ESCAPE: class_room.close()
+			elif event.physical_keycode >= KEY_1 and event.physical_keycode <= KEY_4: class_room.choose(event.physical_keycode-KEY_1)
+			get_viewport().set_input_as_handled()
+		return
 	if screen == 'duel_lobby':
 		if event is InputEventKey and event.pressed and not event.echo:
 			if event.physical_keycode >= KEY_1 and event.physical_keycode <= KEY_4: duel.select_class(event.physical_keycode-KEY_1)
@@ -427,7 +441,7 @@ func _input(event: InputEvent) -> void:
 					coin_console.open()
 					get_viewport().set_input_as_handled()
 				elif screen == 'duel_result': duel.begin()
-				elif screen in ['menu','result'] and not paused: start_race()
+				elif screen in ['menu','result'] and not paused: ui_action('start')
 			KEY_ESCAPE:
 				if screen in ['result','duel_result']: enter_island()
 				elif screen in ['racing','island','duel']: toggle_pause()
@@ -438,6 +452,7 @@ func _input(event: InputEvent) -> void:
 			KEY_B: wardrobe.open()
 			KEY_G: gacha.open()
 			KEY_J: duel.open_room()
+			KEY_C: class_room.open()
 			KEY_F3: show_metrics = not show_metrics
 			KEY_F12: screenshot('manual-%d' % Time.get_ticks_msec())
 	if event is InputEventMouseMotion and (mouse_forward or Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT)) and screen in ['racing','island','duel'] and not paused:
@@ -462,10 +477,24 @@ func modal_open() -> bool:
 
 func ui_action(action: String) -> void:
 	if modal_open(): return
+	if screen == 'career' and not action.begins_with('class_'): return
+	if action.begins_with('class_pick_'):
+		class_room.choose(int(action.trim_prefix('class_pick_')))
+		return
+	if action.begins_with('class_talent_'):
+		var parts := action.split('_')
+		class_room.talent(int(parts[2]),int(parts[3]))
+		return
+	if action in ['join','start','retry','restart'] and class_profile.class_id == '' and screen in ['island','menu']:
+		class_room.open('race')
+		return
 	if action.begins_with('duel_class_'):
 		duel.select_class(int(action.trim_prefix('duel_class_')))
 		return
 	match action:
+		'class_room': class_room.open()
+		'class_confirm': class_room.confirm()
+		'class_close': class_room.close()
 		'duel_room': duel.open_room()
 		'duel_begin': duel.begin()
 		'join': join_race()

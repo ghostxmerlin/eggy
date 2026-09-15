@@ -105,11 +105,14 @@ func _ready() -> void:
 func set_skin(id: String) -> void:
 	skin_id = Skins.get_skin(id).id
 	Skins.apply(model,skin_id)
+	if skills and skills.career: skills.career.set_meta('ghost_alpha',-1.0)
 
 func request_jump() -> void:
+	if skills.career.states.has('root'): return
 	if active and not finished and not game.paused and not is_instance_valid(vehicle) and not skills.controlled() and skills.dive_left <= 0: jump_buffer = .14
 
 func request_roll() -> void:
+	if skills.career.enabled(): return
 	if game.duel and game.duel.in_arena(): return
 	if active and not finished and not game.paused and not is_instance_valid(vehicle) and not skills.controlled() and skills.dive_left <= 0 and skills.attack_left <= 0 and roll_cooldown <= 0:
 		roll_left = .85
@@ -226,7 +229,7 @@ func _physics_process(delta: float) -> void:
 			if Input.is_action_just_pressed('jump'): request_jump()
 			for slot in range(1,6):
 				if Input.is_action_just_pressed('skill_'+str(slot)): skills.use_skill(slot)
-			if Input.is_action_just_pressed('roll'): skills.use_skill(1)
+			if Input.is_action_just_pressed('roll') and not skills.career.enabled(): skills.use_skill(1)
 		elif training_dummy:
 			var to_home := training_home-position
 			to_home.y = 0
@@ -292,10 +295,10 @@ func _physics_process(delta: float) -> void:
 	var floor_before := is_on_floor()
 	move_and_slide()
 	if is_instance_valid(game.feedback): game.feedback.movement(self,floor_before,incoming_velocity)
-	if skills.dive_left > 0: skills.resolve_dive_collisions(incoming_velocity)
+	if skills.dive_left > 0 and not skills.career.enabled(): skills.resolve_dive_collisions(incoming_velocity)
 	if active and not finished:
 		var impulse: Vector3 = game.course.hazard_at(position)
-		if impulse.length_squared()>0 and hit_cooldown<=0 and invulnerable<=0:
+		if impulse.length_squared()>0 and hit_cooldown<=0 and invulnerable<=0 and not skills.career.states.has('block'):
 			velocity = impulse
 			hit_cooldown = .8
 			squash = .75
@@ -325,7 +328,7 @@ func animate(delta: float) -> void:
 	pivot.position.y = .85+absf(sin(bob))*.075*walk_weight
 	pivot.position.x = sin(bob)*.055*walk_weight*cos(pivot.rotation.y)
 	pivot.position.z = -sin(bob)*.055*walk_weight*sin(pivot.rotation.y)
-	if skills.dive_left > 0:
+	if skills.dive_left > 0 and not skills.career.enabled():
 		roll_visual.rotation.x = lerp_angle(roll_visual.rotation.x, PI*.48, 1-exp(-delta*30))
 	elif roll_left > 0:
 		roll_visual.rotation.x -= delta*17
@@ -351,6 +354,10 @@ func animate(delta: float) -> void:
 			if limbs.has(part):
 				limbs[part][0].rotation.x += lerpf(-.7,.35,progress)*weight
 	model.rotation = model.rotation.lerp(slash_pose,1-exp(-delta*28))
+	if skills.career.states.has('storm'): model.rotation.y = skills.career.spin_angle
+	if skills.career.pose_left > 0:
+		for part in ['ArmL','ArmR']:
+			if limbs.has(part): limbs[part][0].rotation.x = -1.05
 	if skills.attack_left > 0: skills.fish.sync_hands()
 	var outfit_rig := model.get_node_or_null('SkinAccessories/OutfitRig')
 	if outfit_rig: outfit_rig.sync()

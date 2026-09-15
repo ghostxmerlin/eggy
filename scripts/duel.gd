@@ -25,6 +25,10 @@ func in_arena() -> bool:
 
 func open_room() -> void:
 	if game.screen not in ['island','duel_result'] or is_instance_valid(game.player.vehicle): return
+	if game.class_profile.class_id == '':
+		game.class_room.open('duel')
+		return
+	selected_class = preload('res://scripts/class_catalog.gd').index(game.class_profile.class_id)
 	game.close_modals()
 	game.release_mouse_drive()
 	game.feedback.reset()
@@ -35,10 +39,11 @@ func open_room() -> void:
 
 func select_class(index: int) -> void:
 	if phase == 'selection' and index >= 0 and index < CLASSES.size():
-		selected_class = index
+		selected_class = preload('res://scripts/class_catalog.gd').index(game.class_profile.class_id)
 		game.hud.queue_redraw()
 
 func begin() -> void:
+	if game.class_profile.class_id == '': return
 	if game.screen not in ['duel_lobby','duel','duel_result']: return
 	game.close_modals()
 	game.feedback.reset()
@@ -59,6 +64,8 @@ func begin() -> void:
 	opponent.external_control = true
 	opponent.ai_speed = game.player.SPEED
 	opponent_class = rng.randi_range(0,CLASSES.size()-1)
+	opponent.skills.career.configure(preload('res://scripts/class_catalog.gd').IDS[opponent_class],[1,1,1])
+	selected_class = preload('res://scripts/class_catalog.gd').index(game.class_profile.class_id)
 	opponent.set_skin(['royal','sky','berry','mint'][opponent_class])
 	game.player.external_control = false
 	game.player.reset_to_start(Vector3(0,.12,6))
@@ -111,6 +118,15 @@ func drive_opponent(delta: float) -> void:
 	var direction := offset.normalized()
 	var tangent := Vector3(-direction.z,0,direction.x)*strafe_side
 	var kit = opponent.skills
+	if kit.career.enabled():
+		var ranged: bool = kit.career.class_id in ['mage','hunter']
+		var advance: Vector3 = direction if distance > (7.0 if ranged else 2.1) else -direction if distance < (4.0 if ranged else 1.3) else Vector3.ZERO
+		if kit.career.pending.get('id','') == 'aimed': advance = Vector3.ZERO
+		if game.player.skills.career.states.has('stealth') and distance > 1.7: advance = tangent*.15
+		opponent.drive = Vector2(advance.x,advance.z)
+		opponent.pivot.rotation.y = atan2(direction.x,direction.z)
+		kit.career.ai(delta)
+		return
 	var move := direction
 	if distance < 1.65: move = -direction*.6+tangent*.4
 	elif distance < 3.2 and kit.cooldown(3) > 1.0: move = tangent*.7-direction*.3

@@ -73,7 +73,9 @@ func tick(delta: float) -> void:
 			stuck_time = .3
 	if action_left <= 0:
 		action_left = racer.rng.randf_range(.45,.9)
-		if racer.is_on_floor() and stuck_time < .2 and absf(direction.x) < .22 and clear_runway(14) and traffic_cost(racer.position+direction*5) < 2:
+		if racer.skills.career.enabled():
+			racer.skills.career.ai(1.0,true)
+		elif racer.is_on_floor() and stuck_time < .2 and absf(direction.x) < .22 and clear_runway(14) and traffic_cost(racer.position+direction*5) < 2:
 			racer.skills.use_skill(1)
 
 func plan_route() -> void:

@@ -29,7 +29,7 @@ func run():
 	var island_id: int = game.course.get_instance_id()
 	var player = game.player
 	var skin: String = player.skin_id
-	game.ui_action('join')
+	game.join_race() # Career selection UI is covered by test_duel.gd.
 	for i in range(5): await physics_frame
 	check(game.screen == 'racing' and game.rules.phase == 'countdown', 'Join starts the competition countdown')
 	check(not game.practice and not game.rules.practice, 'Join enables timed qualification rules')
@@ -66,7 +66,7 @@ func run():
 	for i in range(5): await physics_frame
 	check(game.coin_console.visible and game.screen == 'island', 'Island Enter opens coin input')
 	game.coin_console.close()
-	game.ui_action('join')
+	game.join_race() # Career selection UI is covered by test_duel.gd.
 	check_roster(game)
 	check(game.rules.phase == 'countdown' and not game.practice, 'Island join still starts another 32-player race')
 	game.toggle_pause()
@@ -76,7 +76,7 @@ func run():
 	for i in range(20): await physics_frame
 	check(game.player.is_on_floor(), 'Island spawn rests on solid ground')
 	game.toggle_pause()
-	game.ui_action('join')
+	game.join_race() # Career selection UI is covered by test_duel.gd.
 	check_roster(game)
 	check(not game.paused and game.rules.phase == 'countdown', 'Paused island join resumes into a fresh competition')
 	print('ISLAND FLOW TEST: ', 'PASS' if failures.is_empty() else 'FAIL', failures)

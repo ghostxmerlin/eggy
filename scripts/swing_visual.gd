@@ -4,6 +4,7 @@ const Shapes = preload('res://scripts/outfit_models.gd')
 var kit: Node3D
 var club: Node3D
 var saber: Node3D
+var class_blade: Node3D
 var trail: MeshInstance3D
 var flash: Node3D
 var laser := false
@@ -40,6 +41,15 @@ func _ready() -> void:
 		link.top_level = true
 		arm_links.append(link)
 	build_saber()
+	class_blade = Node3D.new()
+	class_blade.name = 'ClassBlade'
+	add_child(class_blade)
+	var steel = Shapes.mat(Color('#e4eaf2'))
+	steel.metallic = .8
+	Shapes.box(class_blade,Vector3(0,.74,0),Vector3(.19,1.0,.065),steel)
+	Shapes.box(class_blade,Vector3(0,.18,0),Vector3(.38,.07,.10),Shapes.mat(Color('#ffd36f')))
+	Shapes.tube(class_blade,[Vector3(0,-.16,0),Vector3(0,.18,0)],.055,Shapes.mat(Color('#483448')))
+	class_blade.hide()
 	trail = MeshInstance3D.new()
 	trail.name = 'DescendingSlashTrail'
 	add_child(trail)
@@ -76,9 +86,11 @@ func begin() -> void:
 	laser = kit.racer.skin_id == 'mecha'
 	for link in arm_links:
 		link.material_override.albedo_color = Color(preload('res://scripts/skin_catalog.gd').get_skin(kit.racer.skin_id).shell)
-	club.visible = not laser
+	var profession: bool = kit.career and kit.career.enabled()
+	club.visible = not laser and not profession
+	class_blade.visible = not laser and profession
 	saber.visible = laser
-	trail.material_override = kit.material(Color(1.7,.12,.8,.42) if laser else Color(1,.82,.38,.40),true)
+	trail.material_override = kit.material(Color(1.7,.12,.8,.42) if laser else Color(kit.career.color(),.55) if profession else Color(1,.82,.38,.40),true)
 	visual_time = 0
 	hit_pause = 0
 	flash_left = 0

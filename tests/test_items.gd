@@ -46,7 +46,7 @@ func run() -> void:
 	root.add_child(game)
 	await process_frame
 	check(not game.items.enabled and game.items.pickups.is_empty(),'Island has no race item boxes')
-	game.ui_action('join')
+	game.join_race() # Career selection UI is covered by test_duel.gd.
 	items = game.items
 	check(items.pickups.size() == 44,'Competition supplies item boxes along ten safe rows')
 	game.set_physics_process(false)

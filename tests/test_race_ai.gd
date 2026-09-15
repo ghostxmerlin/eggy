@@ -51,7 +51,7 @@ func run() -> void:
 	game.item_seed = 91
 	root.add_child(game)
 	await process_frame
-	game.ui_action('join')
+	game.join_race() # Career selection UI is covered by test_duel.gd.
 	game.set_physics_process(false)
 	game.items.set_physics_process(false)
 	visual = '--visual' in OS.get_cmdline_user_args()

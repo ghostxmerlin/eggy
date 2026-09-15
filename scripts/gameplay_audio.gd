@@ -31,6 +31,8 @@ var urgent_spoken := false
 func _ready() -> void:
 	rng.randomize()
 	for cue in CUES: streams[cue] = load('res://assets/audio/actions/'+cue+'.wav')
+	for cue in ['mortal','storm','shout','charge','reflect','frostbolt','lance','nova','blink','block','sinister','eviscerate','kidney','shadowstep','stealth','arcane','raptor','trap','disengage','aimed','stun','immune','freeze','thaw','impact_frost','impact_shadow','impact_arrow','impact_metal']:
+		streams['class_'+cue] = load('res://assets/audio/classes/'+cue+'.wav')
 	for id in LINES: speech[id] = load('res://assets/audio/voice/'+id+'.wav')
 	for i in range(4):
 		var channel := AudioStreamPlayer.new()

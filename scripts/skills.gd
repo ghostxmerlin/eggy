@@ -4,6 +4,7 @@ const Swing = preload('res://scripts/swing_motion.gd')
 const COOLDOWNS := [3.3, 3.0, 4.0, 10.0, 15.0]
 const NAMES := ['滚动', '飞扑', '咸鱼棒', '冰锥术', '破胆怒吼']
 const FREEZE_SECONDS := 2.0
+var career: Node3D
 var racer: CharacterBody3D
 var remaining: Array[float] = [0,0,0,0,0]
 var frozen_left := 0.0
@@ -28,17 +29,21 @@ var effects: Array[Dictionary] = []
 func _ready() -> void:
 	racer = get_parent()
 	build_visuals()
+	career = preload('res://scripts/class_kit.gd').new()
+	add_child(career)
 
 func cooldown(slot: int) -> float:
-	return racer.roll_cooldown if slot == 1 else remaining[slot-1]
+	if slot < 1 or slot > 5: return INF
+	return remaining[slot-1] if career and career.enabled() else racer.roll_cooldown if slot == 1 else remaining[slot-1]
 
 func controlled() -> bool:
-	return frozen_left > 0 or fear_left > 0
+	return frozen_left > 0 or fear_left > 0 or (career and career.blocked())
 
 func forward() -> Vector3:
 	return Vector3(0,0,-1).rotated(Vector3.UP,racer.game.camera_yaw) if racer.is_player else Vector3(sin(racer.pivot.rotation.y),0,cos(racer.pivot.rotation.y))
 
 func use_skill(slot: int) -> bool:
+	if career and career.enabled(): return career.use(slot)
 	if racer.game.duel and racer.game.duel.in_arena() and slot in [1,2]: return false
 	if is_instance_valid(racer.vehicle): return false
 	if slot < 1 or slot > 5 or racer.game.paused or not racer.active or racer.finished or controlled(): return false
@@ -101,6 +106,7 @@ func cancel_action() -> void:
 	fish.cancel()
 
 func apply_freeze() -> void:
+	if career and (career.states.has('block') or career.states.has('storm')): return
 	if frozen_left <= 0: racer.game.action_sound('freeze',racer,1.0,true)
 	cancel_action()
 	frozen_left = FREEZE_SECONDS
@@ -112,6 +118,7 @@ func apply_freeze() -> void:
 	skull.hide()
 
 func apply_fear(origin: Vector3) -> void:
+	if career and (career.states.has('block') or career.states.has('storm')): return
 	if fear_left <= 0: racer.game.action_sound('fear',racer,1.0,true)
 	cancel_action()
 	frozen_left = 0
@@ -122,6 +129,7 @@ func apply_fear(origin: Vector3) -> void:
 	skull.show()
 
 func reset(clear_cooldowns := false) -> void:
+	if career: career.reset()
 	cancel_action()
 	frozen_left = 0
 	fear_left = 0
@@ -133,6 +141,7 @@ func reset(clear_cooldowns := false) -> void:
 	effects.clear()
 
 func tick(delta: float) -> void:
+	if career: career.tick(delta)
 	if frozen_left > 0 and frozen_left <= delta: racer.game.action_sound('thaw',racer)
 	for i in range(remaining.size()): remaining[i] = maxf(0, remaining[i]-delta)
 	frozen_left = maxf(0,frozen_left-delta)
@@ -143,7 +152,8 @@ func tick(delta: float) -> void:
 	attack_left = maxf(0,attack_left-delta)
 	if attack_pending and attack_left <= .42:
 		attack_pending = false
-		racer.game.action_sound('swing',racer)
+		if career and career.enabled(): career.sound(career.melee.get('id','mortal'))
+		else: racer.game.action_sound('swing',racer)
 	if attack_left > 0:
 		var old_phase := Swing.phase(Swing.DURATION-previous_attack)
 		var phase := Swing.phase(Swing.DURATION-attack_left)
@@ -173,6 +183,7 @@ func tick(delta: float) -> void:
 		if effect.has('core'): effect.core.albedo_color.a = fade*.9
 
 func receive_impulse(impulse: Vector3, duration: float) -> void:
+	if career and (career.states.has('block') or career.states.has('storm')): return
 	if frozen_left > 0: return
 	if impulse.length() >= 4.0: racer.game.action_sound('knockdown' if impulse.length() >= 8.0 else 'bump',racer)
 	# Keep the vertical component in normal gravity integration, never reset it every frame.
@@ -235,6 +246,9 @@ func sweep_contacts(from_phase: float, to_phase: float) -> void:
 			if not racer.get_world_3d().direct_space_state.intersect_ray(query).is_empty(): continue
 			swing_hits[target.get_instance_id()] = true
 			fish.impact(point)
+			if career and career.enabled():
+				career.on_melee(target)
+				continue
 			racer.game.action_sound('hit',racer)
 			var normal := contact.normalized() if contact.length_squared() > .001 else radial
 			var tangent := Vector3.UP.cross(radial)
@@ -251,6 +265,7 @@ func sweep_contacts(from_phase: float, to_phase: float) -> void:
 			if racer.game.duel: racer.game.duel.register_hit(racer,target)
 
 func movement(direction: Vector3) -> Vector3:
+	if career and (career.blocked() or career.states.has('root')): return Vector3.ZERO
 	if frozen_left > 0: return Vector3.ZERO
 	if fear_left > 0:
 		var away := racer.global_position-fear_origin
@@ -258,7 +273,7 @@ func movement(direction: Vector3) -> Vector3:
 		if away.length_squared() < .01: away = Vector3.FORWARD
 		return away.normalized().rotated(Vector3.UP,sin(fear_left*8+racer.racer_id)*.7)
 	if dive_left > 0: return dive_direction
-	return direction
+	return career.movement(direction) if career else direction
 
 func material(color: Color, transparent := false) -> StandardMaterial3D:
 	var mat := StandardMaterial3D.new()

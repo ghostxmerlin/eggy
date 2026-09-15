@@ -3,6 +3,8 @@ func _initialize() -> void:
 	call_deferred('run')
 func run() -> void:
 	var game = load('res://main.tscn').instantiate()
+	game.skin_save_path = 'user://test-career-race-isolated.cfg'
+	DirAccess.remove_absolute(game.skin_save_path+'.career')
 	game.item_seed = 2026
 	for argument in OS.get_cmdline_user_args():
 		if argument.begins_with('--seed='): game.item_seed = int(argument.trim_prefix('--seed='))
@@ -12,6 +14,9 @@ func run() -> void:
 	var visual := '--visual' in OS.get_cmdline_user_args()
 	if visual: await capture(game,'race-32-island-entry')
 	game.ui_action('join')
+	if game.screen == 'career':
+		game.class_room.choose(0)
+		game.class_room.confirm()
 	if game.racers.size() != 32 or game.practice:
 		print('FULL RACE: FAIL island entry did not create 32-player competition')
 		game.queue_free()
@@ -40,6 +45,7 @@ func run() -> void:
 			print('RACER ',racer.racer_id,' ',racer.position,' checkpoint=',racer.checkpoint)
 	game.queue_free()
 	await process_frame
+	DirAccess.remove_absolute('user://test-career-race-isolated.cfg.career')
 	quit(0 if ok else 1)
 
 func capture(game, label: String) -> void:

@@ -55,6 +55,9 @@ func _draw() -> void:
 	var scale_factor := size/Vector2(1440,900)
 	draw_set_transform(Vector2.ZERO,0,scale_factor)
 	buttons.clear()
+	if game.screen == 'career':
+		game.class_room.draw(self)
+		return
 	if game.screen in ['duel_lobby','duel','duel_result']:
 		preload('res://scripts/duel_ui.gd').draw(self)
 		return
@@ -176,6 +179,7 @@ func draw_island() -> void:
 		txt('到处逛逛，试试技能',Vector2(56,780),22,INK,true)
 		txt('W/S 前后 · Q/E 平移 · A/D 转向',Vector2(56,814),16,TEAL)
 		txt('空格 跳跃 · 鼠标双键 前进',Vector2(56,845),16,TEAL)
+	if not is_instance_valid(game.player.vehicle): button('class_room',Rect2(1220,442,184,54),'职业 · C',false)
 	if not is_instance_valid(game.player.vehicle): button('duel_room',Rect2(1220,510,184,54),'决斗场 · J',false)
 	if not is_instance_valid(game.player.vehicle): button('gacha',Rect2(1220,578,184,54),'盲盒 · G',false)
 	if not is_instance_valid(game.player.vehicle): button('wardrobe',Rect2(1220,646,184,54),'衣柜 · B',false)
@@ -231,18 +235,25 @@ func _gui_input(event: InputEvent) -> void:
 				break
 
 func draw_skills() -> void:
+	var career = game.player.skills.career
+	if career.enabled():
+		var description: String = preload('res://scripts/class_catalog.gd').NAMES[preload('res://scripts/class_catalog.gd').index(career.class_id)]
+		if career.class_id == 'rogue': description += ' · 连击点 '+str(career.combo)+' / 3'
+		if not career.pending.is_empty() and career.pending.has('duration'): description += ' · '+preload('res://scripts/class_catalog.gd').skill(career.class_id,1 if career.pending.id == 'frostbolt' else 5)[1]+' %.1f' % career.pending.time
+		panel(Rect2(450,742,540,32),WHITE,10)
+		centered(description,720,765,18,INK,true)
 	var kit = game.player.skills
 	var colors := [Color('#167f86'),Color('#d67b30'),Color('#467d9a'),Color('#329aca'),Color('#9661b4')]
 	for i in range(5):
 		var x := 450.0+i*110
 		var cd: float = kit.cooldown(i+1)
 		var riding: bool = is_instance_valid(game.player.vehicle)
-		var reserved: bool = game.screen in ['duel','duel_result'] and i < 2
+		var reserved: bool = not kit.career.enabled() and game.screen in ['duel','duel_result'] and i < 2
 		var ready: bool = not reserved and cd <= 0 and not kit.controlled() and game.player.active and not riding
 		panel(Rect2(x,785,100,84),WHITE if ready else Color('#d6e2e3'),17,true)
 		panel(Rect2(x+8,792,22,22),colors[i],7)
 		centered(str(i+1),x+19,809,15,WHITE,true)
-		centered('职业技 '+str(i+1) if reserved else kit.NAMES[i],x+50,835,17,INK,true)
+		centered('职业技 '+str(i+1) if reserved else preload('res://scripts/class_catalog.gd').skill(kit.career.class_id,i+1)[1] if kit.career.enabled() else kit.NAMES[i],x+50,835,17,INK,true)
 		centered('待定' if reserved else '乘坐中' if riding else ('%.1f 秒' % cd if cd > 0 else ('受控' if kit.controlled() else '就绪')),x+50,858,14,colors[i],true)
 		if cd > 0:
-			draw_line(Vector2(x+10,873),Vector2(x+10+80*(1-cd/kit.COOLDOWNS[i]),873),colors[i],3,true)
+			draw_line(Vector2(x+10,873),Vector2(x+10+80*(1-cd/(kit.career.duration(i+1) if kit.career.enabled() else kit.COOLDOWNS[i])),873),colors[i],3,true)
